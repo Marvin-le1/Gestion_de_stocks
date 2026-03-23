@@ -1,19 +1,30 @@
-# stive_flutter
+# NEGOSUD - Front mobile Flutter
 
-A new Flutter project.
+Application mobile (sans authentification pour le moment) avec deux espaces:
 
-## Getting Started
+- Back-office gerant: gestion des articles, familles, fournisseurs, clients, commandes clients, commandes fournisseurs, inventaires.
+- Front-office client: catalogue, panier, passage de commande, suivi des commandes.
 
-This project is a starting point for a Flutter application.
+## Prerequis
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter 3.41+ / Dart 3.11+
+- Backend Spring Boot NEGOSUD lance localement
+- (Optionnel) ngrok pour exposer le backend en HTTPS
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Configuration
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Copier `.env.example` vers `.env` si besoin.
+2. La variable utilisee est `URL_NGROK`.
+3. Si `URL_NGROK` est absente, fallback automatique sur `http://10.0.2.2:8080/api`.
+
+## Lancement local
+
+Depuis `stive_flutter`:
+
+```powershell
+flutter pub get
+flutter run
+```
 
 ## ngrok + .env automatique
 
@@ -42,9 +53,45 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start-ngrok.ps1 -NoStart
 # Copie aussi l'URL dans le presse-papiers
 powershell -ExecutionPolicy Bypass -File .\scripts\start-ngrok.ps1 -CopyToClipboard
 
-# Connaitre le statut de Ngrok
+# Verifier le statut de ngrok
 Get-Process ngrok -ErrorAction SilentlyContinue
 
-# Stopper Ngrok
+# Stopper ngrok
 Stop-Process -Name ngrok -Force
+```
+
+## Procedure complete (demo mobile)
+
+1. Lancer le backend Spring Boot a la racine du repo (`pom.xml`):
+
+```powershell
+mvn spring-boot:run
+```
+
+2. Lancer ngrok et mettre a jour `.env`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-ngrok.ps1
+```
+
+3. Lancer l'app Flutter:
+
+```powershell
+flutter run
+```
+
+## Couverture cahier des charges
+
+- Separation des espaces gerant/client: OK.
+- CRUD principaux (articles, familles, fournisseurs, clients): OK.
+- Commandes clients: creation, statut, suppression, gestion des lignes: OK.
+- Commandes fournisseurs: creation, statut, suppression, gestion des lignes: OK.
+- Inventaires: creation avec lignes + historique: OK.
+- Front-office client: recherche catalogue, panier, validation commande, suivi + detail des lignes: OK.
+
+## Verification qualite
+
+```powershell
+flutter analyze
+flutter test
 ```
