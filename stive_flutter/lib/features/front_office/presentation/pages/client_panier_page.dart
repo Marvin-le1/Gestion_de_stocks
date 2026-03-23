@@ -25,6 +25,8 @@ class ClientPanierPage extends StatefulWidget {
 class _ClientPanierPageState extends State<ClientPanierPage> {
   late Future<List<JsonMap>> _clientsFuture;
   int? _selectedClientId;
+  final TextEditingController _commentaireController = TextEditingController();
+  bool _sending = false;
 
   @override
   void initState() {
@@ -32,13 +34,55 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
     _clientsFuture = ClientsService.findAll();
   }
 
+  @override
+  void dispose() {
+    _commentaireController.dispose();
+    super.dispose();
+  }
+
+  int? _stockFor(CartItem item) {
+    final article = item.article;
+    final raw =
+        article['quantiteStock'] ?? article['stockActuel'] ?? article['stock'];
+    if (raw is num) return raw.toInt();
+    return null;
+  }
+
   Future<void> _checkout() async {
-    if (_selectedClientId == null || widget.cart.isEmpty) return;
+    if (_selectedClientId == null || widget.cart.isEmpty || _sending) return;
+
+    final total = widget.cart.fold<double>(0, (acc, item) => acc + item.total);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmer la commande'),
+          content: Text(
+            'Client: #$_selectedClientId\nArticles: ${widget.cart.length}\nTotal: ${Formatters.money(total)}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Valider'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
 
     try {
+      setState(() => _sending = true);
       await CommandesClientsService.create({
         'clientId': _selectedClientId,
-        'commentaire': 'Commande via application mobile',
+        'commentaire': _commentaireController.text.trim().isEmpty
+            ? 'Commande via application mobile'
+            : _commentaireController.text.trim(),
         'lignes': [
           for (final item in widget.cart)
             {'articleId': item.articleId, 'quantite': item.quantite},
@@ -47,6 +91,7 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
 
       if (!mounted) return;
       widget.onClear();
+      _commentaireController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Commande envoyee avec succes')),
       );
@@ -55,6 +100,10 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
     }
   }
 
@@ -96,7 +145,9 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
                   final item = widget.cart[index];
                   return ListTile(
                     title: Text(item.designation),
-                    subtitle: Text(Formatters.money(item.prixUnitaire)),
+                    subtitle: Text(
+                      '${Formatters.money(item.prixUnitaire)}${_stockFor(item) == null ? '' : ' • Stock: ${_stockFor(item)}'}',
+                    ),
                     leading: IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
                       onPressed: () {
@@ -115,6 +166,15 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
                         IconButton(
                           icon: const Icon(Icons.add_circle_outline),
                           onPressed: () {
+                            final stock = _stockFor(item);
+                            if (stock != null && item.quantite >= stock) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Stock maximum atteint'),
+                                ),
+                              );
+                              return;
+                            }
                             item.quantite += 1;
                             widget.onCartChanged();
                           },
@@ -130,6 +190,16 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  TextField(
+                    controller: _commentaireController,
+                    minLines: 2,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Commentaire (optionnel)',
+                      hintText: 'Ex: livraison en matinee',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     'Total: ${Formatters.money(total)}',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -137,9 +207,13 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
                   ),
                   const SizedBox(height: 8),
                   FilledButton.icon(
-                    onPressed: _selectedClientId == null ? null : _checkout,
+                    onPressed: _selectedClientId == null || _sending
+                        ? null
+                        : _checkout,
                     icon: const Icon(Icons.shopping_bag_outlined),
-                    label: const Text('Passer la commande'),
+                    label: Text(
+                      _sending ? 'Envoi en cours...' : 'Passer la commande',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton(
