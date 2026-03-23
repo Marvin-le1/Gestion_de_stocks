@@ -30,27 +30,50 @@ class _ClientOrdersPageState extends State<ClientOrdersPage> {
     });
   }
 
-  Future<void> _createQuickOrder() async {
-    if (_selectedClientId == null) return;
-    try {
-      await CommandesClientsService.create({
-        'clientId': _selectedClientId,
-        'commentaire': 'Commande front-office',
-        'lignes': <JsonMap>[],
-      });
-      await _loadOrders();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Commande creee (ajoutez des lignes en back-office)'),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
+  Widget _buildOrderLines(int commandeId) {
+    return FutureBuilder<List<JsonMap>>(
+      future: CommandesClientsService.findLignes(commandeId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(12),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(12),
+            child: Text(snapshot.error.toString()),
+          );
+        }
+
+        final lignes = snapshot.data ?? [];
+        if (lignes.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Text('Aucune ligne pour cette commande'),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Column(
+            children: [
+              for (final ligne in lignes)
+                ListTile(
+                  dense: true,
+                  title: Text(
+                    ((ligne['article'] as JsonMap?)?['designation']
+                            as String?) ??
+                        'Article #${ligne['articleId'] ?? '-'}',
+                  ),
+                  subtitle: Text('Quantite: ${ligne['quantite'] ?? '-'}'),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -89,17 +112,6 @@ class _ClientOrdersPageState extends State<ClientOrdersPage> {
                 },
               ),
               const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: _selectedClientId == null
-                      ? null
-                      : _createQuickOrder,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Creer commande'),
-                ),
-              ),
-              const SizedBox(height: 10),
               Expanded(
                 child: _ordersFuture == null
                     ? const Center(child: Text('Choisissez un client'))
@@ -127,12 +139,19 @@ class _ClientOrdersPageState extends State<ClientOrdersPage> {
                             itemCount: orders.length,
                             itemBuilder: (context, index) {
                               final order = orders[index];
+                              final commandeId = order['id'] as int;
                               return Card(
-                                child: ListTile(
+                                child: ExpansionTile(
                                   title: Text('Commande #${order['id']}'),
                                   subtitle: Text(
                                     '${order['statut']} • ${Formatters.dateTime(order['dateCommande'] as String?)}',
                                   ),
+                                  trailing: IconButton(
+                                    tooltip: 'Actualiser la liste',
+                                    onPressed: _loadOrders,
+                                    icon: const Icon(Icons.refresh),
+                                  ),
+                                  children: [_buildOrderLines(commandeId)],
                                 ),
                               );
                             },
