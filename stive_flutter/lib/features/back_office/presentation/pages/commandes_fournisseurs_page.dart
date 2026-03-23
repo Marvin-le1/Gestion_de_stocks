@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/types.dart';
+import '../../../shared/services/articles_service.dart';
 import '../../../shared/services/commandes_fournisseurs_service.dart';
 import '../../../shared/services/fournisseurs_service.dart';
 import 'crud_helpers.dart';
@@ -152,6 +153,194 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
     );
   }
 
+  Future<void> _manageLignes(int commandeId) async {
+    final articles = await ArticlesService.findAll();
+    if (!mounted) return;
+
+    int? articleId;
+    final quantiteController = TextEditingController(text: '1');
+    Future<List<JsonMap>> lignesFuture =
+        CommandesFournisseursService.findLignes(commandeId);
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: Text('Lignes commande #$commandeId'),
+              content: SizedBox(
+                width: 600,
+                height: 420,
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: articleId,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Article',
+                            ),
+                            items: [
+                              for (final article in articles)
+                                DropdownMenuItem<int>(
+                                  value: article['id'] as int,
+                                  child: Text(
+                                    article['designation'] as String? ??
+                                        'Article',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                            ],
+                            onChanged: (value) =>
+                                setModalState(() => articleId = value),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 110,
+                          child: TextField(
+                            controller: quantiteController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Quantite',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          try {
+                            final quantite =
+                                int.tryParse(quantiteController.text.trim()) ??
+                                0;
+                            if (articleId == null || quantite <= 0) {
+                              showAppMessage(
+                                context,
+                                'Selectionnez un article et une quantite valide',
+                                error: true,
+                              );
+                              return;
+                            }
+
+                            await CommandesFournisseursService.ajouterLigne(
+                              commandeId,
+                              articleId!,
+                              quantite,
+                            );
+
+                            setModalState(() {
+                              lignesFuture =
+                                  CommandesFournisseursService.findLignes(
+                                    commandeId,
+                                  );
+                              quantiteController.text = '1';
+                            });
+                          } catch (e) {
+                            if (!mounted) return;
+                            showAppMessage(context, e.toString(), error: true);
+                          }
+                        },
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter ligne'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: FutureBuilder<List<JsonMap>>(
+                        future: lignesFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(snapshot.error.toString()),
+                            );
+                          }
+
+                          final lignes = snapshot.data ?? [];
+                          if (lignes.isEmpty) {
+                            return const Center(
+                              child: Text('Aucune ligne pour cette commande'),
+                            );
+                          }
+
+                          return ListView.separated(
+                            itemCount: lignes.length,
+                            separatorBuilder: (context, index) =>
+                                const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final ligne = lignes[index];
+                              final article =
+                                  (ligne['article'] as JsonMap?) ?? const {};
+                              final designation =
+                                  article['designation'] as String? ??
+                                  'Article #${ligne['articleId'] ?? '-'}';
+                              final quantite = ligne['quantite'] ?? '-';
+                              final ligneId = ligne['id'];
+
+                              return ListTile(
+                                title: Text(designation),
+                                subtitle: Text('Quantite: $quantite'),
+                                trailing: IconButton(
+                                  tooltip: 'Supprimer la ligne',
+                                  icon: const Icon(Icons.delete_outline),
+                                  onPressed: ligneId is! int
+                                      ? null
+                                      : () async {
+                                          try {
+                                            await CommandesFournisseursService.supprimerLigne(
+                                              commandeId,
+                                              ligneId,
+                                            );
+                                            setModalState(() {
+                                              lignesFuture =
+                                                  CommandesFournisseursService.findLignes(
+                                                    commandeId,
+                                                  );
+                                            });
+                                          } catch (e) {
+                                            if (!mounted) return;
+                                            showAppMessage(
+                                              context,
+                                              e.toString(),
+                                              error: true,
+                                            );
+                                          }
+                                        },
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Fermer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<JsonMap>>(
@@ -192,6 +381,9 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                         if (value == 'status') {
                           _changeStatus(item);
                         }
+                        if (value == 'lignes') {
+                          _manageLignes(item['id'] as int);
+                        }
                         if (value == 'delete') {
                           final yes = await confirmDelete(
                             context,
@@ -210,6 +402,10 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                         }
                       },
                       itemBuilder: (context) => const [
+                        PopupMenuItem(
+                          value: 'lignes',
+                          child: Text('Gerer les lignes'),
+                        ),
                         PopupMenuItem(
                           value: 'status',
                           child: Text('Changer statut'),

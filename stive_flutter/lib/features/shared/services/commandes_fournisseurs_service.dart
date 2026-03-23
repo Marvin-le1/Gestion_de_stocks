@@ -31,4 +31,27 @@ class CommandesFournisseursService {
         )
         as JsonMap;
   }
+
+  static Future<List<JsonMap>> findLignes(int id) async {
+    final data =
+        await ApiClient.get('/commandes-fournisseurs/$id/lignes')
+            as List<dynamic>;
+    return data.cast<JsonMap>();
+  }
+
+  static Future<JsonMap> ajouterLigne(
+    int id,
+    int articleId,
+    int quantite,
+  ) async {
+    return await ApiClient.post(
+          '/commandes-fournisseurs/$id/lignes',
+          data: {'articleId': articleId, 'quantite': quantite},
+        )
+        as JsonMap;
+  }
+
+  static Future<void> supprimerLigne(int id, int ligneId) {
+    return ApiClient.delete('/commandes-fournisseurs/$id/lignes/$ligneId');
+  }
 }
