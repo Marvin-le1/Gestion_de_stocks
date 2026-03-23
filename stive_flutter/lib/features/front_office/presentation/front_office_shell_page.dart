@@ -49,16 +49,16 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.wine_bar_outlined),
             label: 'Catalogue',
           ),
           NavigationDestination(
-            icon: Icon(Icons.shopping_cart_outlined),
-            label: 'Panier',
+            icon: const Icon(Icons.shopping_cart_outlined),
+            label: _cart.isEmpty ? 'Panier' : 'Panier (${_cart.length})',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.list_alt_outlined),
             label: 'Commandes',
           ),
