@@ -53,6 +53,19 @@ class _FournisseursPageState extends State<FournisseursPage> {
         text: fournisseur?['contactNom'] as String? ?? '',
       ),
     };
+    String countryCode = Validators.inferCountryCode(
+      phone: fields['telephone']!.text,
+    );
+    if (Validators.normalize(fields['telephone']!.text).isEmpty) {
+      fields['telephone']!.text =
+          Validators.countryByCode(countryCode).dialCode;
+    } else {
+      fields['telephone']!.text = Validators.applyDialCode(
+        fields['telephone']!.text,
+        countryCode,
+      );
+    }
+
     final formKey = GlobalKey<FormState>();
     bool autoValidate = false;
 
@@ -90,9 +103,9 @@ class _FournisseursPageState extends State<FournisseursPage> {
             maxLength: Validators.maxCityLength,
           );
         case 'codePostal':
-          return Validators.postalCodeInternational(value);
+          return Validators.postalCodeForCountry(value, countryCode);
         case 'telephone':
-          return Validators.phoneInternational(value);
+          return Validators.phoneForCountry(value, countryCode);
         case 'email':
           return Validators.email(value);
         case 'contactNom':
@@ -131,6 +144,30 @@ class _FournisseursPageState extends State<FournisseursPage> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: countryCode,
+                        decoration: const InputDecoration(labelText: 'Pays'),
+                        items: [
+                          for (final country in Validators.countries)
+                            DropdownMenuItem<String>(
+                              value: country.code,
+                              child: Text(
+                                '${country.name} (${country.dialCode})',
+                              ),
+                            ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setModalState(() {
+                            countryCode = value;
+                            fields['telephone']!.text = Validators.applyDialCode(
+                              fields['telephone']!.text,
+                              countryCode,
+                            );
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
                       for (final entry in fields.entries)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -166,11 +203,12 @@ class _FournisseursPageState extends State<FournisseursPage> {
                                 'ville': Validators.normalize(
                                   fields['ville']!.text,
                                 ),
-                                'codePostal': Validators.normalize(
+                                'codePostal': Validators.normalizePostalCode(
                                   fields['codePostal']!.text,
                                 ),
-                                'telephone': Validators.normalize(
+                                'telephone': Validators.normalizePhoneForCountry(
                                   fields['telephone']!.text,
+                                  countryCode,
                                 ),
                                 'email': Validators.normalize(
                                   fields['email']!.text,

@@ -44,6 +44,19 @@ class _ClientsPageState extends State<ClientsPage> {
         text: client?['codePostal'] as String? ?? '',
       ),
     };
+    String countryCode = Validators.inferCountryCode(
+      phone: fields['telephone']!.text,
+    );
+    if (Validators.normalize(fields['telephone']!.text).isEmpty) {
+      fields['telephone']!.text =
+          Validators.countryByCode(countryCode).dialCode;
+    } else {
+      fields['telephone']!.text = Validators.applyDialCode(
+        fields['telephone']!.text,
+        countryCode,
+      );
+    }
+
     final formKey = GlobalKey<FormState>();
     bool autoValidate = false;
 
@@ -77,7 +90,7 @@ class _ClientsPageState extends State<ClientsPage> {
         case 'email':
           return Validators.email(value, required: true);
         case 'telephone':
-          return Validators.phoneInternational(value);
+          return Validators.phoneForCountry(value, countryCode);
         case 'adresse':
           return Validators.address(value);
         case 'ville':
@@ -87,7 +100,7 @@ class _ClientsPageState extends State<ClientsPage> {
             maxLength: Validators.maxCityLength,
           );
         case 'codePostal':
-          return Validators.postalCodeInternational(value);
+          return Validators.postalCodeForCountry(value, countryCode);
         default:
           return null;
       }
@@ -118,6 +131,30 @@ class _ClientsPageState extends State<ClientsPage> {
                       Text(
                         client == null ? 'Nouveau client' : 'Modifier client',
                         style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: countryCode,
+                        decoration: const InputDecoration(labelText: 'Pays'),
+                        items: [
+                          for (final country in Validators.countries)
+                            DropdownMenuItem<String>(
+                              value: country.code,
+                              child: Text(
+                                '${country.name} (${country.dialCode})',
+                              ),
+                            ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setModalState(() {
+                            countryCode = value;
+                            fields['telephone']!.text = Validators.applyDialCode(
+                              fields['telephone']!.text,
+                              countryCode,
+                            );
+                          });
+                        },
                       ),
                       const SizedBox(height: 8),
                       for (final entry in fields.entries)
@@ -155,8 +192,9 @@ class _ClientsPageState extends State<ClientsPage> {
                                 'email': Validators.normalize(
                                   fields['email']!.text,
                                 ),
-                                'telephone': Validators.normalize(
+                                'telephone': Validators.normalizePhoneForCountry(
                                   fields['telephone']!.text,
+                                  countryCode,
                                 ),
                                 'adresse': Validators.normalize(
                                   fields['adresse']!.text,
@@ -164,7 +202,7 @@ class _ClientsPageState extends State<ClientsPage> {
                                 'ville': Validators.normalize(
                                   fields['ville']!.text,
                                 ),
-                                'codePostal': Validators.normalize(
+                                'codePostal': Validators.normalizePostalCode(
                                   fields['codePostal']!.text,
                                 ),
                               };

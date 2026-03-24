@@ -22,6 +22,171 @@ class Validators {
 
   static final RegExp _postalAllowedCharsRegex = RegExp(r"^[A-Za-z0-9 -]+$");
 
+  static final List<CountryRule> _countries = [
+    CountryRule(
+      code: 'FR',
+      name: 'France',
+      dialCode: '+33',
+      postalRegex: RegExp(r'^\d{5}$'),
+      postalExample: '75001',
+      minLocalDigits: 9,
+      maxLocalDigits: 9,
+    ),
+    CountryRule(
+      code: 'BE',
+      name: 'Belgique',
+      dialCode: '+32',
+      postalRegex: RegExp(r'^\d{4}$'),
+      postalExample: '1000',
+      minLocalDigits: 8,
+      maxLocalDigits: 9,
+    ),
+    CountryRule(
+      code: 'CH',
+      name: 'Suisse',
+      dialCode: '+41',
+      postalRegex: RegExp(r'^\d{4}$'),
+      postalExample: '1200',
+      minLocalDigits: 9,
+      maxLocalDigits: 9,
+    ),
+    CountryRule(
+      code: 'DE',
+      name: 'Allemagne',
+      dialCode: '+49',
+      postalRegex: RegExp(r'^\d{5}$'),
+      postalExample: '10115',
+      minLocalDigits: 7,
+      maxLocalDigits: 11,
+    ),
+    CountryRule(
+      code: 'ES',
+      name: 'Espagne',
+      dialCode: '+34',
+      postalRegex: RegExp(r'^\d{5}$'),
+      postalExample: '28001',
+      minLocalDigits: 9,
+      maxLocalDigits: 9,
+    ),
+    CountryRule(
+      code: 'IT',
+      name: 'Italie',
+      dialCode: '+39',
+      postalRegex: RegExp(r'^\d{5}$'),
+      postalExample: '00118',
+      minLocalDigits: 6,
+      maxLocalDigits: 11,
+      dropLeadingZeroForInternational: false,
+    ),
+    CountryRule(
+      code: 'GB',
+      name: 'Royaume-Uni',
+      dialCode: '+44',
+      postalRegex: RegExp(
+        r'^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$',
+        caseSensitive: false,
+      ),
+      postalExample: 'SW1A 1AA',
+      minLocalDigits: 9,
+      maxLocalDigits: 10,
+    ),
+    CountryRule(
+      code: 'US',
+      name: 'Etats-Unis',
+      dialCode: '+1',
+      postalRegex: RegExp(r'^\d{5}(-\d{4})?$'),
+      postalExample: '90210',
+      minLocalDigits: 10,
+      maxLocalDigits: 10,
+    ),
+    CountryRule(
+      code: 'CA',
+      name: 'Canada',
+      dialCode: '+1',
+      postalRegex: RegExp(
+        r'^[A-Z]\d[A-Z][ -]?\d[A-Z]\d$',
+        caseSensitive: false,
+      ),
+      postalExample: 'H2Y 1C6',
+      minLocalDigits: 10,
+      maxLocalDigits: 10,
+    ),
+    CountryRule(
+      code: 'MA',
+      name: 'Maroc',
+      dialCode: '+212',
+      postalRegex: RegExp(r'^\d{5}$'),
+      postalExample: '20000',
+      minLocalDigits: 9,
+      maxLocalDigits: 9,
+    ),
+    CountryRule(
+      code: 'TN',
+      name: 'Tunisie',
+      dialCode: '+216',
+      postalRegex: RegExp(r'^\d{4}$'),
+      postalExample: '1000',
+      minLocalDigits: 8,
+      maxLocalDigits: 8,
+    ),
+  ];
+
+  static List<CountryRule> get countries => _countries;
+
+  static CountryRule countryByCode(String code) {
+    return _countries.firstWhere(
+      (c) => c.code == code,
+      orElse: () => _countries.first,
+    );
+  }
+
+  static String inferCountryCode({String? phone}) {
+    final raw = normalize(phone ?? '').replaceAll(' ', '');
+    if (!raw.startsWith('+')) return _countries.first.code;
+
+    final ordered = [..._countries]
+      ..sort((a, b) => b.dialCode.length.compareTo(a.dialCode.length));
+    for (final country in ordered) {
+      if (raw.startsWith(country.dialCode)) {
+        return country.code;
+      }
+    }
+    return _countries.first.code;
+  }
+
+  static String applyDialCode(String value, String countryCode) {
+    final country = countryByCode(countryCode);
+    final digitsOnly = normalize(value).replaceAll(RegExp(r'\D'), '');
+
+    var localDigits = digitsOnly;
+    final ordered = [..._countries]
+      ..sort((a, b) => b.dialCode.length.compareTo(a.dialCode.length));
+    for (final c in ordered) {
+      final dialDigits = c.dialCode.replaceAll('+', '');
+      if (localDigits.startsWith(dialDigits)) {
+        localDigits = localDigits.substring(dialDigits.length);
+        break;
+      }
+    }
+
+    if (country.dropLeadingZeroForInternational && localDigits.startsWith('0')) {
+      localDigits = localDigits.substring(1);
+    }
+
+    if (localDigits.isEmpty) {
+      return country.dialCode;
+    }
+    return '${country.dialCode}$localDigits';
+  }
+
+  static String normalizePhoneForCountry(String value, String countryCode) {
+    return applyDialCode(value, countryCode).replaceAll(' ', '');
+  }
+
+  static String normalizePostalCode(String value) {
+    return normalize(value).toUpperCase();
+  }
+
   static String normalize(String value) {
     return value.trim().replaceAll(RegExp(r"\s+"), ' ');
   }
@@ -88,6 +253,34 @@ class Validators {
     return null;
   }
 
+  static String? phoneForCountry(String value, String countryCode) {
+    final country = countryByCode(countryCode);
+    final normalized = normalize(value).replaceAll(' ', '');
+    if (normalized.isEmpty) return null;
+
+    if (!normalized.startsWith(country.dialCode)) {
+      return 'Telephone doit commencer par ${country.dialCode}';
+    }
+    if (!RegExp(r'^\+[0-9]+$').hasMatch(normalized)) {
+      return 'Telephone invalide';
+    }
+
+    final totalDigits = normalized.replaceAll(RegExp(r'\D'), '').length;
+    final dialDigits = country.dialCode.replaceAll('+', '').length;
+    final localDigits = totalDigits - dialDigits;
+    if (localDigits < country.minLocalDigits ||
+        localDigits > country.maxLocalDigits) {
+      if (country.minLocalDigits == country.maxLocalDigits) {
+        if (country.code == 'FR') {
+          return 'Pour la France: 10 chiffres en national (0X...), ou ${country.dialCode} suivi de 9 chiffres';
+        }
+        return 'Telephone invalide pour ${country.name} (${country.minLocalDigits} chiffres apres ${country.dialCode})';
+      }
+      return 'Telephone invalide pour ${country.name} (${country.minLocalDigits} a ${country.maxLocalDigits} chiffres apres ${country.dialCode})';
+    }
+    return null;
+  }
+
   static String? postalCodeInternational(String value) {
     final normalized = normalize(value);
     if (normalized.isEmpty) return null;
@@ -100,6 +293,22 @@ class Validators {
     final compact = normalized.replaceAll(RegExp(r"[^A-Za-z0-9]"), '');
     if (compact.length < 3 || compact.length > 10) {
       return 'Code postal invalide (3 a 10 caracteres alphanumeriques)';
+    }
+    return null;
+  }
+
+  static String? postalCodeForCountry(String value, String countryCode) {
+    final country = countryByCode(countryCode);
+    final normalized = normalizePostalCode(value);
+    if (normalized.isEmpty) return null;
+    if (normalized.length > maxPostalCodeLength) {
+      return 'Code postal depasse $maxPostalCodeLength caracteres';
+    }
+    if (!_postalAllowedCharsRegex.hasMatch(normalized)) {
+      return 'Code postal invalide';
+    }
+    if (!country.postalRegex.hasMatch(normalized)) {
+      return 'Code postal invalide pour ${country.name} (ex: ${country.postalExample})';
     }
     return null;
   }
@@ -201,4 +410,26 @@ class Validators {
     }
     return null;
   }
+}
+
+class CountryRule {
+  const CountryRule({
+    required this.code,
+    required this.name,
+    required this.dialCode,
+    required this.postalRegex,
+    required this.postalExample,
+    this.minLocalDigits = 6,
+    this.maxLocalDigits = 12,
+    this.dropLeadingZeroForInternational = true,
+  });
+
+  final String code;
+  final String name;
+  final String dialCode;
+  final RegExp postalRegex;
+  final String postalExample;
+  final int minLocalDigits;
+  final int maxLocalDigits;
+  final bool dropLeadingZeroForInternational;
 }
