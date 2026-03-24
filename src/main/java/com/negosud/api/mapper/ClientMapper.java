@@ -19,6 +19,7 @@ public class ClientMapper {
         dto.setAdresse(client.getAdresse());
         dto.setVille(client.getVille());
         dto.setCodePostal(client.getCodePostal());
+        dto.setPays(client.getPays());
         return dto;
     }
 
@@ -38,5 +39,6 @@ public class ClientMapper {
         client.setAdresse(dto.getAdresse());
         client.setVille(dto.getVille());
         client.setCodePostal(dto.getCodePostal());
+        client.setPays(dto.getPays());
     }
 }

@@ -32,6 +32,7 @@ public class Client {
     private String adresse;
     private String ville;
     private String codePostal;
+    private String pays;
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CommandeClient> commandes = new ArrayList<>();

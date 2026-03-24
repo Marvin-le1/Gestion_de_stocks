@@ -13,4 +13,5 @@ public class ClientResponseDto {
     private String adresse;
     private String ville;
     private String codePostal;
+    private String pays;
 }

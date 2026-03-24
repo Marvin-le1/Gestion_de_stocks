@@ -25,6 +25,7 @@ public class Fournisseur {
     private String adresse;
     private String ville;
     private String codePostal;
+    private String pays;
     private String telephone;
     private String email;
     private String contactNom;

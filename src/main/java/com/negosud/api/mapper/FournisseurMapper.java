@@ -16,6 +16,7 @@ public class FournisseurMapper {
         dto.setAdresse(fournisseur.getAdresse());
         dto.setVille(fournisseur.getVille());
         dto.setCodePostal(fournisseur.getCodePostal());
+        dto.setPays(fournisseur.getPays());
         dto.setTelephone(fournisseur.getTelephone());
         dto.setEmail(fournisseur.getEmail());
         dto.setContactNom(fournisseur.getContactNom());
@@ -35,6 +36,7 @@ public class FournisseurMapper {
         fournisseur.setAdresse(dto.getAdresse());
         fournisseur.setVille(dto.getVille());
         fournisseur.setCodePostal(dto.getCodePostal());
+        fournisseur.setPays(dto.getPays());
         fournisseur.setTelephone(dto.getTelephone());
         fournisseur.setEmail(dto.getEmail());
         fournisseur.setContactNom(dto.getContactNom());
