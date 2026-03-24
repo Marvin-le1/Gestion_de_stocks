@@ -1,8 +1,10 @@
 package com.negosud.api.service.impl;
 
 import com.negosud.api.dto.request.CommandeFournisseurRequestDto;
+import com.negosud.api.dto.request.LigneCommandeRequestDto;
 import com.negosud.api.dto.request.StatutCommandeDto;
 import com.negosud.api.dto.response.CommandeFournisseurResponseDto;
+import com.negosud.api.dto.response.LigneCommandeFournisseurResponseDto;
 import com.negosud.api.exception.ResourceNotFoundException;
 import com.negosud.api.mapper.CommandeFournisseurMapper;
 import com.negosud.api.model.entity.*;
@@ -91,6 +93,32 @@ public class CommandeFournisseurServiceImpl implements CommandeFournisseurServic
         }
 
         return commandeFournisseurMapper.toResponseDto(commandeFournisseurRepository.save(commande));
+    }
+
+    @Override
+    public LigneCommandeFournisseurResponseDto ajouterLigne(Long id, LigneCommandeRequestDto dto) {
+        CommandeFournisseur commande = getOrThrow(id);
+        if (commande.getStatut() != StatutCommande.EN_ATTENTE) {
+            throw new IllegalArgumentException("Seule une commande EN_ATTENTE peut être modifiée");
+        }
+        Article article = articleRepository.findById(dto.getArticleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Article", dto.getArticleId()));
+
+        LigneCommandeFournisseur ligne = new LigneCommandeFournisseur();
+        ligne.setCommandeFournisseur(commande);
+        ligne.setArticle(article);
+        ligne.setQuantite(dto.getQuantite());
+        ligne.setPrixUnitaire(article.getPrixUnitaire());
+
+        return commandeFournisseurMapper.ligneToResponseDto(ligneCommandeFournisseurRepository.save(ligne));
+    }
+
+    @Override
+    public void supprimerLigne(Long commandeId, Long ligneId) {
+        getOrThrow(commandeId);
+        LigneCommandeFournisseur ligne = ligneCommandeFournisseurRepository.findById(ligneId)
+                .orElseThrow(() -> new ResourceNotFoundException("LigneCommandeFournisseur", ligneId));
+        ligneCommandeFournisseurRepository.delete(ligne);
     }
 
     @Override

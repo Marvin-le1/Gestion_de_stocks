@@ -8,9 +8,11 @@ import FormDialog from '../../components/common/FormDialog';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useNotification } from '../../contexts/NotificationContext';
 import { familleService } from '../../services/familleService';
+import { validate, rules, hasErrors } from '../../utils/validate';
 
 const TYPE_FAMILLE = ['ROUGE', 'ROSE', 'BLANC', 'PETILLANT', 'DIGESTIF'];
 const EMPTY_FORM = { type: '', description: '' };
+const SCHEMA = { type: [rules.required('Le type')] };
 
 export default function Familles() {
   const notify = useNotification();
@@ -20,6 +22,7 @@ export default function Familles() {
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [deleteId, setDeleteId] = useState(null);
 
   const load = useCallback(async () => {
@@ -36,11 +39,16 @@ export default function Familles() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setEditId(null); setForm(EMPTY_FORM); setDialogOpen(true); };
-  const openEdit = (row) => { setEditId(row.id); setForm({ type: row.type, description: row.description || '' }); setDialogOpen(true); };
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const openCreate = () => { setEditId(null); setForm(EMPTY_FORM); setErrors({}); setDialogOpen(true); };
+  const openEdit = (row) => { setEditId(row.id); setForm({ type: row.type, description: row.description || '' }); setErrors({}); setDialogOpen(true); };
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setErrors((err) => ({ ...err, [e.target.name]: undefined }));
+  };
 
   const handleSubmit = async () => {
+    const errs = validate(form, SCHEMA);
+    if (hasErrors(errs)) { setErrors(errs); return; }
     setSaving(true);
     try {
       if (editId) {
@@ -98,7 +106,7 @@ export default function Familles() {
 
       <FormDialog open={dialogOpen} title={editId ? 'Modifier la famille' : 'Nouvelle famille'} onClose={() => setDialogOpen(false)} onSubmit={handleSubmit} loading={saving}>
         <Stack spacing={2} mt={1}>
-          <TextField select name="type" label="Type *" value={form.type} onChange={handleChange} size="small" fullWidth>
+          <TextField select name="type" label="Type *" value={form.type} onChange={handleChange} size="small" fullWidth error={Boolean(errors.type)} helperText={errors.type}>
             {TYPE_FAMILLE.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </TextField>
           <TextField name="description" label="Description" value={form.description} onChange={handleChange} size="small" fullWidth multiline rows={2} />

@@ -1,8 +1,10 @@
 package com.negosud.api.controller;
 
 import com.negosud.api.dto.request.CommandeFournisseurRequestDto;
+import com.negosud.api.dto.request.LigneCommandeRequestDto;
 import com.negosud.api.dto.request.StatutCommandeDto;
 import com.negosud.api.dto.response.CommandeFournisseurResponseDto;
+import com.negosud.api.dto.response.LigneCommandeFournisseurResponseDto;
 import com.negosud.api.service.CommandeFournisseurService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -52,6 +54,20 @@ public class CommandeFournisseurController {
     public ResponseEntity<CommandeFournisseurResponseDto> changerStatut(@PathVariable Long id,
                                                                          @Valid @RequestBody StatutCommandeDto dto) {
         return ResponseEntity.ok(commandeFournisseurService.changerStatut(id, dto));
+    }
+
+    @PostMapping("/{id}/lignes")
+    @Operation(summary = "Ajouter une ligne à une commande fournisseur")
+    public ResponseEntity<LigneCommandeFournisseurResponseDto> ajouterLigne(@PathVariable Long id,
+                                                                              @Valid @RequestBody LigneCommandeRequestDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(commandeFournisseurService.ajouterLigne(id, dto));
+    }
+
+    @DeleteMapping("/{id}/lignes/{ligneId}")
+    @Operation(summary = "Supprimer une ligne d'une commande fournisseur")
+    public ResponseEntity<Void> supprimerLigne(@PathVariable Long id, @PathVariable Long ligneId) {
+        commandeFournisseurService.supprimerLigne(id, ligneId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

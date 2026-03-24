@@ -13,9 +13,11 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useNotification } from '../../contexts/NotificationContext';
 import { commandeFournisseurService } from '../../services/commandeFournisseurService';
 import { fournisseurService } from '../../services/fournisseurService';
+import { validate, rules, hasErrors } from '../../utils/validate';
 
 const STATUT_COLORS = { EN_ATTENTE: 'warning', VALIDEE: 'info', LIVREE: 'success', ANNULEE: 'error' };
 const EMPTY_FORM = { fournisseurId: '', commentaire: '' };
+const SCHEMA = { fournisseurId: [rules.required('Le fournisseur')] };
 
 export default function CommandesFournisseurs() {
   const notify = useNotification();
@@ -26,6 +28,7 @@ export default function CommandesFournisseurs() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [deleteId, setDeleteId] = useState(null);
 
   const load = useCallback(async () => {
@@ -46,9 +49,14 @@ export default function CommandesFournisseurs() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setErrors((err) => ({ ...err, [e.target.name]: undefined }));
+  };
 
   const handleCreate = async () => {
+    const errs = validate(form, SCHEMA);
+    if (hasErrors(errs)) { setErrors(errs); return; }
     setSaving(true);
     try {
       const res = await commandeFournisseurService.create({ fournisseurId: Number(form.fournisseurId), commentaire: form.commentaire, lignes: [] });
@@ -124,7 +132,7 @@ export default function CommandesFournisseurs() {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Commandes fournisseurs</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setForm(EMPTY_FORM); setDialogOpen(true); }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setForm(EMPTY_FORM); setErrors({}); setDialogOpen(true); }}>
           Nouveau bon de commande
         </Button>
       </Stack>
@@ -132,7 +140,7 @@ export default function CommandesFournisseurs() {
 
       <FormDialog open={dialogOpen} title="Nouveau bon de commande" onClose={() => setDialogOpen(false)} onSubmit={handleCreate} loading={saving}>
         <Stack spacing={2} mt={1}>
-          <TextField select name="fournisseurId" label="Fournisseur *" value={form.fournisseurId} onChange={handleChange} size="small" fullWidth>
+          <TextField select name="fournisseurId" label="Fournisseur *" value={form.fournisseurId} onChange={handleChange} size="small" fullWidth error={Boolean(errors.fournisseurId)} helperText={errors.fournisseurId}>
             {fournisseurs.map((f) => <MenuItem key={f.id} value={f.id}>{f.nom}</MenuItem>)}
           </TextField>
           <TextField name="commentaire" label="Commentaire" value={form.commentaire} onChange={handleChange} size="small" fullWidth multiline rows={2} />

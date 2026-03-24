@@ -61,15 +61,9 @@ export default function CommandeFournisseurDetail() {
   const handleAjouterLigne = async () => {
     setLigneSaving(true);
     try {
-      // On met à jour la commande avec la nouvelle ligne via PUT
-      const updatedLignes = [
-        ...(commande.lignes || []).map((l) => ({ articleId: l.article.id, quantite: l.quantite })),
-        { articleId: Number(ligneForm.articleId), quantite: Number(ligneForm.quantite) },
-      ];
-      await commandeFournisseurService.update(id, {
-        fournisseurId: commande.fournisseur.id,
-        commentaire: commande.commentaire,
-        lignes: updatedLignes,
+      await commandeFournisseurService.ajouterLigne(id, {
+        articleId: Number(ligneForm.articleId),
+        quantite: Number(ligneForm.quantite),
       });
       notify('Ligne ajoutée');
       setLigneDialog(false);
@@ -83,14 +77,7 @@ export default function CommandeFournisseurDetail() {
 
   const handleSupprimerLigne = async (ligneId) => {
     try {
-      const updatedLignes = (commande.lignes || [])
-        .filter((l) => l.id !== ligneId)
-        .map((l) => ({ articleId: l.article.id, quantite: l.quantite }));
-      await commandeFournisseurService.update(id, {
-        fournisseurId: commande.fournisseur.id,
-        commentaire: commande.commentaire,
-        lignes: updatedLignes,
-      });
+      await commandeFournisseurService.supprimerLigne(id, ligneId);
       notify('Ligne supprimée');
       load();
     } catch {

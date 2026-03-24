@@ -13,9 +13,11 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useNotification } from '../../contexts/NotificationContext';
 import { commandeClientService } from '../../services/commandeClientService';
 import { clientService } from '../../services/clientService';
+import { validate, rules, hasErrors } from '../../utils/validate';
 
 const STATUT_COLORS = { EN_ATTENTE: 'warning', VALIDEE: 'info', LIVREE: 'success', ANNULEE: 'error' };
 const EMPTY_FORM = { clientId: '', commentaire: '' };
+const SCHEMA = { clientId: [rules.required('Le client')] };
 
 export default function CommandesClients() {
   const notify = useNotification();
@@ -26,6 +28,7 @@ export default function CommandesClients() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
   const [deleteId, setDeleteId] = useState(null);
 
   const load = useCallback(async () => {
@@ -46,9 +49,14 @@ export default function CommandesClients() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setErrors((err) => ({ ...err, [e.target.name]: undefined }));
+  };
 
   const handleCreate = async () => {
+    const errs = validate(form, SCHEMA);
+    if (hasErrors(errs)) { setErrors(errs); return; }
     setSaving(true);
     try {
       const res = await commandeClientService.create({ clientId: Number(form.clientId), commentaire: form.commentaire, lignes: [] });
@@ -121,7 +129,7 @@ export default function CommandesClients() {
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Commandes clients</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setForm(EMPTY_FORM); setDialogOpen(true); }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setForm(EMPTY_FORM); setErrors({}); setDialogOpen(true); }}>
           Nouvelle commande
         </Button>
       </Stack>
@@ -129,7 +137,7 @@ export default function CommandesClients() {
 
       <FormDialog open={dialogOpen} title="Nouvelle commande client" onClose={() => setDialogOpen(false)} onSubmit={handleCreate} loading={saving}>
         <Stack spacing={2} mt={1}>
-          <TextField select name="clientId" label="Client *" value={form.clientId} onChange={handleChange} size="small" fullWidth>
+          <TextField select name="clientId" label="Client *" value={form.clientId} onChange={handleChange} size="small" fullWidth error={Boolean(errors.clientId)} helperText={errors.clientId}>
             {clients.map((c) => (
               <MenuItem key={c.id} value={c.id}>{c.nom} {c.prenom}</MenuItem>
             ))}
