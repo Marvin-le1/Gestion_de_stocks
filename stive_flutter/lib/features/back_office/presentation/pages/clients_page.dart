@@ -81,6 +81,27 @@ class _ClientsPageState extends State<ClientsPage> {
       }
     }
 
+    String? hintFor(String key) {
+      switch (key) {
+        case 'nom':
+          return 'Ex: Martin';
+        case 'prenom':
+          return 'Ex: Camille';
+        case 'email':
+          return 'Ex: camille.martin@mail.com';
+        case 'telephone':
+          return 'Ex: +33612345678';
+        case 'adresse':
+          return 'Ex: 12 rue des Vignes';
+        case 'ville':
+          return 'Ex: Bordeaux';
+        case 'codePostal':
+          return 'Ex: 33000';
+        default:
+          return null;
+      }
+    }
+
     String? validateField(String key, String value) {
       switch (key) {
         case 'nom':
@@ -170,6 +191,7 @@ class _ClientsPageState extends State<ClientsPage> {
                                 : TextInputType.text,
                             decoration: InputDecoration(
                               labelText: labelFor(entry.key),
+                              hintText: hintFor(entry.key),
                             ),
                             validator: (value) =>
                                 validateField(entry.key, value ?? ''),

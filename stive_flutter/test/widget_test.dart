@@ -6,15 +6,18 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stive_flutter/app/negosud_app.dart';
 
 void main() {
   testWidgets('Negosud app renders', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(const NegosudApp());
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('NEGOSUD'), findsOneWidget);
-    expect(find.text('Espace gerant (back-office)'), findsOneWidget);
-    expect(find.text('Espace client (front-office)'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
+    expect(find.text('Pas de compte ? Creer un compte'), findsOneWidget);
   });
 }

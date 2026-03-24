@@ -78,6 +78,7 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                         controller: commentaireController,
                         decoration: const InputDecoration(
                           labelText: 'Commentaire',
+                          hintText: 'Ex: Priorite livraison matin',
                         ),
                         validator: (value) =>
                             Validators.commentaire(value ?? ''),
@@ -236,6 +237,7 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               labelText: 'Quantite',
+                              hintText: 'Ex: 2',
                             ),
                             validator: (value) => Validators.minIntRequired(
                               value ?? '',

@@ -197,6 +197,7 @@ class _InventairesPageState extends State<InventairesPage> {
                         controller: commentaireController,
                         decoration: const InputDecoration(
                           labelText: 'Commentaire',
+                          hintText: 'Ex: Inventaire mensuel entrepot A',
                         ),
                         validator: (value) =>
                             Validators.commentaire(value ?? ''),
@@ -233,6 +234,7 @@ class _InventairesPageState extends State<InventairesPage> {
                                         keyboardType: TextInputType.number,
                                         decoration: const InputDecoration(
                                           labelText: 'Quantité constatée',
+                                          hintText: 'Ex: 120',
                                         ),
                                         validator: (value) =>
                                             Validators.minIntRequired(

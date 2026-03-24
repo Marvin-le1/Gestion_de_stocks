@@ -80,7 +80,10 @@ class _FamillesPageState extends State<FamillesPage> {
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Description'),
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        hintText: 'Ex: Vins rouges tanniques',
+                      ),
                       validator: (value) => Validators.optionalText(
                         value ?? '',
                         'Description',

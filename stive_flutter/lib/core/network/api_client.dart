@@ -7,6 +7,9 @@ import 'api_exception.dart';
 class ApiClient {
   ApiClient._();
 
+  static String? _authToken;
+  static Future<void> Function()? _onUnauthorized;
+
   static final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 15),
@@ -18,9 +21,49 @@ class ApiClient {
     ),
   );
 
+  static final bool _interceptorsReady = _configureInterceptors();
+
   static String get apiPrefix => '${AppEnv.apiBaseUrl}/api';
 
+  static void setAuthToken(String? token) {
+    _authToken = token?.trim().isEmpty ?? true ? null : token?.trim();
+  }
+
+  static void setOnUnauthorizedHandler(Future<void> Function()? handler) {
+    _onUnauthorized = handler;
+  }
+
+  static bool _configureInterceptors() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = _authToken;
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+        onError: (error, handler) {
+          final statusCode = error.response?.statusCode;
+          final path = error.requestOptions.path;
+          final isAuthRoute = path.contains('/api/auth/');
+          if (statusCode == 401 && !isAuthRoute) {
+            final callback = _onUnauthorized;
+            if (callback != null) {
+              callback();
+            }
+          }
+          handler.next(error);
+        },
+      ),
+    );
+    return true;
+  }
+
   static String _resolveUrl(String path) {
+    if (!_interceptorsReady) {
+      throw StateError('Interceptors non initialises');
+    }
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     return '$apiPrefix$normalizedPath';
   }
