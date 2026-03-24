@@ -17,6 +17,8 @@ class ArticlesPage extends StatefulWidget {
 
 class _ArticlesPageState extends State<ArticlesPage> {
   late Future<List<JsonMap>> _future;
+  static const int _pageSize = 20;
+  int _page = 0;
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
 
   void _refresh() => setState(() {
         _future = ArticlesService.findAll();
+      _page = 0;
       });
 
   Future<void> _openForm({JsonMap? article}) async {
@@ -383,29 +386,41 @@ class _ArticlesPageState extends State<ArticlesPage> {
           final bId = (b['id'] as num?)?.toInt() ?? 0;
           return bId.compareTo(aId);
         });
+        final totalPages =
+            items.isEmpty ? 1 : ((items.length - 1) ~/ _pageSize) + 1;
+        final effectivePage = _page.clamp(0, totalPages - 1);
+        final pagedItems = items
+            .skip(effectivePage * _pageSize)
+            .take(_pageSize)
+            .toList();
+        final startItem = items.isEmpty ? 0 : (effectivePage * _pageSize) + 1;
+        final endItem = (effectivePage * _pageSize) + pagedItems.length;
 
-        return RefreshIndicator(
-          onRefresh: () async => _refresh(),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: () => _openForm(),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Ajouter'),
-                ),
-              ),
-              const SizedBox(height: 8),
-              for (final item in items)
-                Card(
-                  child: ListTile(
-                    title: Text(item['designation'] as String? ?? '-'),
-                    subtitle: Text(
-                      '${item['reference'] ?? '-'} • stock ${item['quantiteStock'] ?? 0} • ${Formatters.money(item['prixUnitaire'] as num?)}',
+        return Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async => _refresh(),
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: () => _openForm(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter'),
+                      ),
                     ),
-                    isThreeLine: true,
+                    const SizedBox(height: 8),
+                    for (final item in pagedItems)
+                      Card(
+                        child: ListTile(
+                          title: Text(item['designation'] as String? ?? '-'),
+                          subtitle: Text(
+                            '${item['reference'] ?? '-'} • stock ${item['quantiteStock'] ?? 0} • ${Formatters.money(item['prixUnitaire'] as num?)}\nReappro: ${((item['reapprovisionnementAuto'] as bool?) ?? false) ? 'Actif' : 'Inactif'}',
+                          ),
+                          isThreeLine: true,
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) async {
                         if (value == 'edit') {
@@ -460,10 +475,29 @@ class _ArticlesPageState extends State<ArticlesPage> {
                         ),
                       ],
                     ),
-                  ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: buildPaginationFooter(
+                currentPage: effectivePage,
+                totalPages: totalPages,
+                totalItems: items.length,
+                startItem: startItem,
+                endItem: endItem,
+                onPrevious: effectivePage > 0
+                    ? () => setState(() => _page = effectivePage - 1)
+                    : null,
+                onNext: effectivePage < totalPages - 1
+                    ? () => setState(() => _page = effectivePage + 1)
+                    : null,
+              ),
+            ),
+          ],
         );
       },
     );

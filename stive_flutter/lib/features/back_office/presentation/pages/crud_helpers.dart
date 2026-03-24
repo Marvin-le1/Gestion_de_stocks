@@ -35,3 +35,53 @@ void showAppMessage(
     ),
   );
 }
+
+Widget buildPaginationFooter({
+  required int currentPage,
+  required int totalPages,
+  required int totalItems,
+  required int startItem,
+  required int endItem,
+  required VoidCallback? onPrevious,
+  required VoidCallback? onNext,
+}) {
+  if (totalItems == 0) {
+    return const SizedBox.shrink();
+  }
+
+  return Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Elements $startItem-$endItem sur $totalItems',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onPrevious,
+                icon: const Icon(Icons.chevron_left),
+                label: const Text('Precedent'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text('Page ${currentPage + 1}/$totalPages'),
+            ),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onNext,
+                icon: const Icon(Icons.chevron_right),
+                label: const Text('Suivant'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}

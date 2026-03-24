@@ -15,6 +15,8 @@ class FamillesPage extends StatefulWidget {
 class _FamillesPageState extends State<FamillesPage> {
   late Future<List<JsonMap>> _future;
   final _types = const ['ROUGE', 'ROSE', 'BLANC', 'PETILLANT', 'DIGESTIF'];
+  static const int _pageSize = 20;
+  int _page = 0;
 
   @override
   void initState() {
@@ -25,6 +27,7 @@ class _FamillesPageState extends State<FamillesPage> {
   void _refresh() {
     setState(() {
       _future = FamillesService.findAll();
+      _page = 0;
     });
   }
 
@@ -148,59 +151,90 @@ class _FamillesPageState extends State<FamillesPage> {
           final bId = (b['id'] as num?)?.toInt() ?? 0;
           return bId.compareTo(aId);
         });
-        return RefreshIndicator(
-          onRefresh: () async => _refresh(),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: FilledButton.icon(
-                  onPressed: () => _openForm(),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Ajouter'),
+        final totalPages =
+            items.isEmpty ? 1 : ((items.length - 1) ~/ _pageSize) + 1;
+        final effectivePage = _page.clamp(0, totalPages - 1);
+        final pagedItems = items
+            .skip(effectivePage * _pageSize)
+            .take(_pageSize)
+            .toList();
+        final startItem = items.isEmpty ? 0 : (effectivePage * _pageSize) + 1;
+        final endItem = (effectivePage * _pageSize) + pagedItems.length;
+        return Column(
+          children: [
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async => _refresh(),
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: () => _openForm(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Ajouter'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    for (final item in pagedItems)
+                      Card(
+                        child: ListTile(
+                          title: Text((item['type'] as String?) ?? '-'),
+                          subtitle: Text((item['description'] as String?) ?? ''),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: () => _openForm(famille: item),
+                                icon: const Icon(Icons.edit_outlined),
+                              ),
+                              IconButton(
+                                onPressed: () async {
+                                  final yes = await confirmDelete(
+                                    context,
+                                    'cette famille',
+                                  );
+                                  if (!yes) return;
+                                  try {
+                                    await FamillesService.delete(item['id'] as int);
+                                    _refresh();
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    showAppMessage(
+                                      context,
+                                      e.toString(),
+                                      error: true,
+                                    );
+                                  }
+                                },
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              for (final item in items)
-                Card(
-                  child: ListTile(
-                    title: Text((item['type'] as String?) ?? '-'),
-                    subtitle: Text((item['description'] as String?) ?? ''),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: () => _openForm(famille: item),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
-                        IconButton(
-                          onPressed: () async {
-                            final yes = await confirmDelete(
-                              context,
-                              'cette famille',
-                            );
-                            if (!yes) return;
-                            try {
-                              await FamillesService.delete(item['id'] as int);
-                              _refresh();
-                            } catch (e) {
-                              if (!mounted) return;
-                              showAppMessage(
-                                context,
-                                e.toString(),
-                                error: true,
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.delete_outline),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: buildPaginationFooter(
+                currentPage: effectivePage,
+                totalPages: totalPages,
+                totalItems: items.length,
+                startItem: startItem,
+                endItem: endItem,
+                onPrevious: effectivePage > 0
+                    ? () => setState(() => _page = effectivePage - 1)
+                    : null,
+                onNext: effectivePage < totalPages - 1
+                    ? () => setState(() => _page = effectivePage + 1)
+                    : null,
+              ),
+            ),
+          ],
         );
       },
     );
