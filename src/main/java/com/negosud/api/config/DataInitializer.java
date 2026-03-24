@@ -1,12 +1,14 @@
 package com.negosud.api.config;
 
 import com.negosud.api.model.entity.*;
+import com.negosud.api.model.enums.Role;
 import com.negosud.api.model.enums.StatutCommande;
 import com.negosud.api.model.enums.TypeFamille;
 import com.negosud.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,8 @@ public class DataInitializer implements CommandLineRunner {
     private final LigneCommandeFournisseurRepository ligneCommandeFournisseurRepository;
     private final InventaireRepository inventaireRepository;
     private final LigneInventaireRepository ligneInventaireRepository;
+    private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -40,6 +44,17 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("Initialisation des données de démonstration NEGOSUD...");
+
+        // ── Utilisateur admin par défaut ──────────────────────────────────────
+        if (!utilisateurRepository.existsByEmail("admin@negosud.fr")) {
+            Utilisateur admin = new Utilisateur();
+            admin.setEmail("admin@negosud.fr");
+            admin.setNom("Administrateur");
+            admin.setMotDePasse(passwordEncoder.encode("negosud2024"));
+            admin.setRole(Role.ADMIN);
+            utilisateurRepository.save(admin);
+            log.info("✔ Compte admin créé — email: admin@negosud.fr / mdp: negosud2024");
+        }
 
         // ── Familles ─────────────────────────────────────────────────────────
         Famille rouge     = famille(TypeFamille.ROUGE,     "Vins rouges de toutes régions");

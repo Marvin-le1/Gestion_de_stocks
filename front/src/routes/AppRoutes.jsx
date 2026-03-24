@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
+import Login from '../pages/auth/Login';
 import Articles from '../pages/articles/Articles';
 import Familles from '../pages/familles/Familles';
 import Fournisseurs from '../pages/fournisseurs/Fournisseurs';
@@ -11,10 +13,22 @@ import CommandesFournisseurs from '../pages/commandes-fournisseurs/CommandesFour
 import CommandeFournisseurDetail from '../pages/commandes-fournisseurs/CommandeFournisseurDetail';
 import Inventaire from '../pages/inventaire/Inventaire';
 
+function PrivateRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route path="/login" element={<Login />} />
+      <Route
+        element={
+          <PrivateRoute>
+            <Layout />
+          </PrivateRoute>
+        }
+      >
         <Route index element={<Navigate to="/articles" replace />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/familles" element={<Familles />} />
