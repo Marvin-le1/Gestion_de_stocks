@@ -23,3 +23,5 @@ logs/
 
 # Variables d'environnement
 .env
+
+./src/main/resources/application.properties
