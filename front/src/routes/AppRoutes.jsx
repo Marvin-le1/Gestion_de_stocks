@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+
+// Back-office
 import Layout from '../components/layout/Layout';
 import Login from '../pages/auth/Login';
 import Articles from '../pages/articles/Articles';
@@ -13,6 +15,15 @@ import CommandesFournisseurs from '../pages/commandes-fournisseurs/CommandesFour
 import CommandeFournisseurDetail from '../pages/commandes-fournisseurs/CommandeFournisseurDetail';
 import Inventaire from '../pages/inventaire/Inventaire';
 
+// Boutique (front-office client)
+import ShopLayout from '../components/layout/ShopLayout';
+import Catalogue from '../pages/shop/Catalogue';
+import ProductDetail from '../pages/shop/ProductDetail';
+import Cart from '../pages/shop/Cart';
+import Checkout from '../pages/shop/Checkout';
+import CheckoutSuccess from '../pages/shop/CheckoutSuccess';
+import Contact from '../pages/shop/Contact';
+
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/login" replace />;
@@ -21,6 +32,17 @@ function PrivateRoute({ children }) {
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Boutique front-office — accès public */}
+      <Route path="/boutique" element={<ShopLayout />}>
+        <Route index element={<Catalogue />} />
+        <Route path=":id" element={<ProductDetail />} />
+        <Route path="panier" element={<Cart />} />
+        <Route path="commande" element={<Checkout />} />
+        <Route path="confirmation" element={<CheckoutSuccess />} />
+        <Route path="contact" element={<Contact />} />
+      </Route>
+
+      {/* Back-office — accès privé */}
       <Route path="/login" element={<Login />} />
       <Route
         element={
@@ -29,7 +51,6 @@ export default function AppRoutes() {
           </PrivateRoute>
         }
       >
-        <Route index element={<Navigate to="/articles" replace />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/familles" element={<Familles />} />
         <Route path="/fournisseurs" element={<Fournisseurs />} />
@@ -40,6 +61,10 @@ export default function AppRoutes() {
         <Route path="/commandes-fournisseurs/:id" element={<CommandeFournisseurDetail />} />
         <Route path="/inventaire" element={<Inventaire />} />
       </Route>
+
+      {/* Racine et routes inconnues → boutique */}
+      <Route index element={<Navigate to="/boutique" replace />} />
+      <Route path="*" element={<Navigate to="/boutique" replace />} />
     </Routes>
   );
 }

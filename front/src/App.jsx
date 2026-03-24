@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import AppRoutes from './routes/AppRoutes';
 
 export default function App() {
@@ -12,9 +13,11 @@ export default function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <NotificationProvider>
-            <AppRoutes />
-          </NotificationProvider>
+          <CartProvider>
+            <NotificationProvider>
+              <AppRoutes />
+            </NotificationProvider>
+          </CartProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
