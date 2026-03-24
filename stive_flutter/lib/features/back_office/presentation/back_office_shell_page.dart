@@ -9,7 +9,14 @@ import 'pages/fournisseurs_page.dart';
 import 'pages/inventaires_page.dart';
 
 class BackOfficeShellPage extends StatefulWidget {
-  const BackOfficeShellPage({super.key});
+  const BackOfficeShellPage({
+    required this.onLogout,
+    required this.onOpenProfile,
+    super.key,
+  });
+
+  final Future<void> Function() onLogout;
+  final VoidCallback onOpenProfile;
 
   @override
   State<BackOfficeShellPage> createState() => _BackOfficeShellPageState();
@@ -45,10 +52,15 @@ class _BackOfficeShellPageState extends State<BackOfficeShellPage> {
         title: Text('Back-office • ${_items[_index].label}'),
         actions: [
           IconButton(
-            tooltip: 'Changer d\'espace',
-            icon: const Icon(Icons.swap_horiz),
-            onPressed: () {
-              Navigator.of(context).popUntil((route) => route.isFirst);
+            tooltip: 'Mon profil',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: widget.onOpenProfile,
+          ),
+          IconButton(
+            tooltip: 'Se deconnecter',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await widget.onLogout();
             },
           ),
         ],
