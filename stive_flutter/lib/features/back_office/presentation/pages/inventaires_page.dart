@@ -19,6 +19,32 @@ class _InventairesPageState extends State<InventairesPage> {
   static const int _pageSize = 20;
   int _page = 0;
 
+  int _toInt(dynamic value, {int fallback = 0}) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  int _stockForArticle(JsonMap article) {
+    return _toInt(article['quantiteStock'] ?? article['stockActuel'] ?? article['stock']);
+  }
+
+  String _articleLabel(JsonMap article) {
+    final designation = (article['designation'] as String?)?.trim();
+    if (designation != null && designation.isNotEmpty) {
+      return designation;
+    }
+    final reference = (article['reference'] as String?)?.trim();
+    if (reference != null && reference.isNotEmpty) {
+      return reference;
+    }
+    return 'Article #${article['id'] ?? '-'}';
+  }
+
+  String _formatEcart(int ecart) {
+    if (ecart > 0) return '+$ecart';
+    return '$ecart';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -35,9 +61,14 @@ class _InventairesPageState extends State<InventairesPage> {
     if (!mounted) return;
 
     final commentaireController = TextEditingController();
-    final quantities = <int, TextEditingController>{
-      for (final a in articles) a['id'] as int: TextEditingController(),
-    };
+    final quantities = <int, TextEditingController>{};
+    final baseStocks = <int, int>{};
+    for (final a in articles) {
+      final id = a['id'] as int;
+      final baseStock = _stockForArticle(a);
+      baseStocks[id] = baseStock;
+      quantities[id] = TextEditingController(text: '$baseStock');
+    }
     final formKey = GlobalKey<FormState>();
     bool autoValidate = false;
 
@@ -84,20 +115,55 @@ class _InventairesPageState extends State<InventairesPage> {
                           itemBuilder: (context, index) {
                             final article = articles[index];
                             final id = article['id'] as int;
+                            final controller = quantities[id]!;
+                            final quantiteConstatee =
+                                int.tryParse(Validators.normalize(controller.text)) ??
+                                baseStocks[id]!;
+                            final ecart = quantiteConstatee - baseStocks[id]!;
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
-                              child: TextFormField(
-                                controller: quantities[id],
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(
-                                  labelText:
-                                      '${article['designation']} - quantite constatee',
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _articleLabel(article),
+                                        style: Theme.of(context).textTheme.titleSmall,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text('Stock actuel: ${baseStocks[id]}'),
+                                      const SizedBox(height: 8),
+                                      TextFormField(
+                                        controller: controller,
+                                        keyboardType: TextInputType.number,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Quantite constatee',
+                                        ),
+                                        validator: (value) =>
+                                            Validators.minIntRequired(
+                                              value ?? '',
+                                              'Quantite constatee',
+                                              0,
+                                            ),
+                                        onChanged: (_) => setModalState(() {}),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Ecart: ${_formatEcart(ecart)}',
+                                        style: TextStyle(
+                                          color: ecart == 0
+                                              ? null
+                                              : ecart > 0
+                                              ? Colors.green.shade700
+                                              : Colors.red.shade700,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                validator: (value) =>
-                                    Validators.nonNegativeIntOptional(
-                                      value ?? '',
-                                      'Quantite constatee',
-                                    ),
                               ),
                             );
                           },
@@ -117,16 +183,14 @@ class _InventairesPageState extends State<InventairesPage> {
                                 final value = Validators.normalize(
                                   entry.value.text,
                                 );
-                                if (value.isEmpty) {
+                                final qty = int.tryParse(value);
+                                if (qty == null) {
                                   continue;
                                 }
-                                final qty = int.tryParse(value);
-                                if (qty != null) {
-                                  lignes.add({
-                                    'articleId': entry.key,
-                                    'quantiteConstatee': qty,
-                                  });
-                                }
+                                lignes.add({
+                                  'articleId': entry.key,
+                                  'quantiteConstatee': qty,
+                                });
                               }
                               await InventairesService.create(
                                 commentaire: Validators.normalize(
@@ -154,6 +218,71 @@ class _InventairesPageState extends State<InventairesPage> {
         );
       },
     );
+  }
+
+  Widget _buildInventaireLignes(JsonMap inventaire) {
+    final lignesRaw = inventaire['lignes'];
+    if (lignesRaw is! List || lignesRaw.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Text('Aucune ligne pour cet inventaire'),
+      );
+    }
+
+    final lignes = lignesRaw.cast<JsonMap>();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Column(
+        children: [
+          for (final ligne in lignes)
+            ListTile(
+              dense: true,
+              title: Text(
+                _articleLabel((ligne['article'] as JsonMap?) ?? const {}),
+              ),
+              subtitle: Text(
+                'Avant: ${_toInt(ligne['quantiteAvantRegularisation'])} • Constatee: ${_toInt(ligne['quantiteConstatee'])} • Ecart: ${_formatEcart(_toInt(ligne['ecart']))}',
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _regulariserInventaire(int inventaireId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Regulariser le stock'),
+          content: const Text(
+            'Cette action va mettre a jour le stock reel avec les quantites constatees. Continuer ?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Regulariser'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await InventairesService.regulariser(inventaireId);
+      if (!mounted) return;
+      _refresh();
+      showAppMessage(context, 'Stock regularise avec succes');
+    } catch (e) {
+      if (!mounted) return;
+      showAppMessage(context, e.toString(), error: true);
+    }
   }
 
   @override
@@ -202,32 +331,20 @@ class _InventairesPageState extends State<InventairesPage> {
                     ),
                     for (final item in pagedItems)
                       Card(
-                        child: ListTile(
+                        child: ExpansionTile(
                           title: Text('Inventaire #${item['id']}'),
                           subtitle: Text(
                             'Date: ${Formatters.dateTime(item['dateInventaire'] as String?)}\nRegularise: ${item['regularise'] == true ? 'Oui' : 'Non'}',
                           ),
-                          isThreeLine: true,
                           trailing: FilledButton.tonal(
                             onPressed: item['regularise'] == true
                                 ? null
-                                : () async {
-                                    try {
-                                      await InventairesService.regulariser(
-                                        item['id'] as int,
-                                      );
-                                      _refresh();
-                                    } catch (e) {
-                                      if (!mounted) return;
-                                      showAppMessage(
-                                        context,
-                                        e.toString(),
-                                        error: true,
-                                      );
-                                    }
-                                  },
+                                : () => _regulariserInventaire(
+                                      item['id'] as int,
+                                    ),
                             child: const Text('Regulariser'),
                           ),
+                          children: [_buildInventaireLignes(item)],
                         ),
                       ),
                   ],
