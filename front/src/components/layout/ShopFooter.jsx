@@ -107,13 +107,20 @@ export default function ShopFooter() {
         </Grid>
 
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', my: 3 }} />
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
           <Typography variant="caption" sx={{ opacity: 0.5 }}>
             © {new Date().getFullYear()} NÉGOSUD — Tous droits réservés
           </Typography>
           <Typography variant="caption" sx={{ opacity: 0.5 }}>
             L'abus d'alcool est dangereux pour la santé. À consommer avec modération.
           </Typography>
+          <MuiLink
+            component={Link}
+            to="/login"
+            sx={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.7rem', textDecoration: 'none', '&:hover': { color: 'rgba(255,255,255,0.5)' } }}
+          >
+            Administration
+          </MuiLink>
         </Box>
       </Container>
     </Box>

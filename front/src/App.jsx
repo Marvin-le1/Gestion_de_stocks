@@ -5,6 +5,7 @@ import theme from './theme';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { ShopAuthProvider } from './contexts/ShopAuthContext';
 import AppRoutes from './routes/AppRoutes';
 
 export default function App() {
@@ -13,11 +14,13 @@ export default function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <CartProvider>
-            <NotificationProvider>
-              <AppRoutes />
-            </NotificationProvider>
-          </CartProvider>
+          <ShopAuthProvider>
+            <CartProvider>
+              <NotificationProvider>
+                <AppRoutes />
+              </NotificationProvider>
+            </CartProvider>
+          </ShopAuthProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

@@ -24,6 +24,7 @@ import Cart from '../pages/shop/Cart';
 import Checkout from '../pages/shop/Checkout';
 import CheckoutSuccess from '../pages/shop/CheckoutSuccess';
 import Contact from '../pages/shop/Contact';
+import BoutiqueLogin from '../pages/shop/BoutiqueLogin';
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -48,6 +49,7 @@ export default function AppRoutes() {
         <Route path="commande" element={<Checkout />} />
         <Route path="confirmation" element={<CheckoutSuccess />} />
         <Route path="contact" element={<Contact />} />
+        <Route path="connexion" element={<BoutiqueLogin />} />
       </Route>
 
       {/* Back-office — accès privé */}

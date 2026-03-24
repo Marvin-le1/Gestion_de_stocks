@@ -11,6 +11,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import { useShopAuth } from '../../contexts/ShopAuthContext';
 import { clientService } from '../../services/clientService';
 import { commandeClientService } from '../../services/commandeClientService';
 
@@ -28,19 +29,35 @@ const EMPTY_FORM = {
 
 export default function Checkout() {
   const { items, cartTotal, clearCart } = useCart();
+  const { shopClient } = useShopAuth();
   const navigate = useNavigate();
 
-  const [step, setStep]           = useState(0);
-  const [form, setForm]           = useState(EMPTY_FORM);
+  // Si le client est déjà connecté, on pré-remplit et on saute l'étape 1
+  const [step, setStep] = useState(shopClient ? 0 : 0);
+  const [form, setForm] = useState(
+    shopClient
+      ? {
+          nom: shopClient.nom ?? '', prenom: shopClient.prenom ?? '',
+          email: shopClient.email ?? '', telephone: shopClient.telephone ?? '',
+          adresse: shopClient.adresse ?? '', ville: shopClient.ville ?? '',
+          codePostal: shopClient.codePostal ?? '', pays: shopClient.pays ?? 'France',
+          motDePasse: '', confirmMotDePasse: '',
+        }
+      : EMPTY_FORM
+  );
   const [errors, setErrors]       = useState({});
   const [loading, setLoading]     = useState(false);
   const [submitError, setSubmitError] = useState('');
 
+  // Statut compte pour l'étape identification
+  // Si déjà connecté via la navbar → on considère "existing_no_pwd" pour skip l'étape
+  const initialAccountStatus = shopClient ? 'existing_no_pwd' : null;
+
   // Identification step
-  const [emailInput, setEmailInput]     = useState('');
+  const [emailInput, setEmailInput]     = useState(shopClient?.email ?? '');
   const [emailError, setEmailError]     = useState('');
-  const [emailChecked, setEmailChecked] = useState(false);   // email vérifié
-  const [accountStatus, setAccountStatus] = useState(null); // 'new' | 'existing_no_pwd' | 'existing_pwd'
+  const [emailChecked, setEmailChecked] = useState(!!shopClient);
+  const [accountStatus, setAccountStatus] = useState(initialAccountStatus);
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword]   = useState(false);
   const [loginError, setLoginError]       = useState('');
@@ -532,7 +549,7 @@ export default function Checkout() {
         </Button>
 
         {step === 0 && (
-          <Button variant="contained" onClick={() => setStep(1)}>
+          <Button variant="contained" onClick={() => setStep(shopClient ? 2 : 1)}>
             Suivant
           </Button>
         )}
