@@ -36,6 +36,8 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
 
     int? fournisseurId;
     final commentaireController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
 
     await showDialog<void>(
       context: context,
@@ -44,28 +46,39 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
           builder: (context, setModalState) {
             return AlertDialog(
               title: const Text('Nouvelle commande fournisseur'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<int>(
-                    value: fournisseurId,
-                    decoration: const InputDecoration(labelText: 'Fournisseur'),
-                    items: [
-                      for (final f in fournisseurs)
-                        DropdownMenuItem<int>(
-                          value: f['id'] as int,
-                          child: Text('${f['nom']}'),
-                        ),
-                    ],
-                    onChanged: (value) =>
-                        setModalState(() => fournisseurId = value),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: commentaireController,
-                    decoration: const InputDecoration(labelText: 'Commentaire'),
-                  ),
-                ],
+              content: Form(
+                key: formKey,
+                autovalidateMode: autoValidate
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<int>(
+                      value: fournisseurId,
+                      decoration: const InputDecoration(
+                        labelText: 'Fournisseur',
+                      ),
+                      items: [
+                        for (final f in fournisseurs)
+                          DropdownMenuItem<int>(
+                            value: f['id'] as int,
+                            child: Text('${f['nom']}'),
+                          ),
+                      ],
+                      validator: (value) =>
+                          value == null ? 'Selectionnez un fournisseur' : null,
+                      onChanged: (value) =>
+                          setModalState(() => fournisseurId = value),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: commentaireController,
+                      decoration: const InputDecoration(labelText: 'Commentaire'),
+                      validator: (value) => Validators.commentaire(value ?? ''),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -74,24 +87,11 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                 ),
                 FilledButton(
                   onPressed: () async {
+                    setModalState(() => autoValidate = true);
+                    if (!(formKey.currentState?.validate() ?? false)) {
+                      return;
+                    }
                     try {
-                      if (fournisseurId == null) {
-                        showAppMessage(
-                          context,
-                          'Selectionnez un fournisseur',
-                          error: true,
-                        );
-                        return;
-                      }
-
-                      final commentError = Validators.commentaire(
-                        commentaireController.text,
-                      );
-                      if (commentError != null) {
-                        showAppMessage(context, commentError, error: true);
-                        return;
-                      }
-
                       await CommandesFournisseursService.create({
                         'fournisseurId': fournisseurId,
                         'commentaire': Validators.normalize(
@@ -173,6 +173,8 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
 
     int? articleId;
     final quantiteController = TextEditingController(text: '1');
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
     Future<List<JsonMap>> lignesFuture =
         CommandesFournisseursService.findLignes(commandeId);
 
@@ -186,7 +188,12 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
               content: SizedBox(
                 width: 600,
                 height: 420,
-                child: Column(
+                child: Form(
+                  key: formKey,
+                  autovalidateMode: autoValidate
+                      ? AutovalidateMode.always
+                      : AutovalidateMode.disabled,
+                  child: Column(
                   children: [
                     Row(
                       children: [
@@ -208,6 +215,8 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                                   ),
                                 ),
                             ],
+                            validator: (value) =>
+                                value == null ? 'Selectionnez un article' : null,
                             onChanged: (value) =>
                                 setModalState(() => articleId = value),
                           ),
@@ -215,11 +224,16 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                         const SizedBox(width: 8),
                         SizedBox(
                           width: 110,
-                          child: TextField(
+                          child: TextFormField(
                             controller: quantiteController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               labelText: 'Quantite',
+                            ),
+                            validator: (value) => Validators.minIntRequired(
+                              value ?? '',
+                              'Quantite',
+                              1,
                             ),
                           ),
                         ),
@@ -230,22 +244,11 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                       alignment: Alignment.centerRight,
                       child: FilledButton.icon(
                         onPressed: () async {
+                          setModalState(() => autoValidate = true);
+                          if (!(formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
                           try {
-                            final quantiteError = Validators.minIntRequired(
-                              quantiteController.text,
-                              'Quantite',
-                              1,
-                            );
-                            if (articleId == null || quantiteError != null) {
-                              showAppMessage(
-                                context,
-                                quantiteError ??
-                                    'Selectionnez un article et une quantite valide',
-                                error: true,
-                              );
-                              return;
-                            }
-
                             final quantite = int.parse(
                               Validators.normalize(quantiteController.text),
                             );
@@ -348,6 +351,7 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                     ),
                   ],
                 ),
+                ),
               ),
               actions: [
                 TextButton(
@@ -374,7 +378,12 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
           return Center(child: Text(snapshot.error.toString()));
         }
 
-        final items = snapshot.data ?? [];
+        final items = [...(snapshot.data ?? <JsonMap>[])];
+        items.sort((a, b) {
+          final aId = (a['id'] as num?)?.toInt() ?? 0;
+          final bId = (b['id'] as num?)?.toInt() ?? 0;
+          return bId.compareTo(aId);
+        });
 
         return RefreshIndicator(
           onRefresh: () async => _refresh(),

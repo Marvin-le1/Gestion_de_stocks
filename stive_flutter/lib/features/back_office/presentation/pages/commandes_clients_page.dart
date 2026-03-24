@@ -35,6 +35,8 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
 
     int? clientId;
     final commentaireController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
     await showDialog<void>(
       context: context,
       builder: (context) {
@@ -42,33 +44,43 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
           builder: (context, setModalState) {
             return AlertDialog(
               title: const Text('Nouvelle commande client'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<int>(
-                      value: clientId,
-                      decoration: const InputDecoration(labelText: 'Client'),
-                      items: [
-                        for (final c in clients)
-                          DropdownMenuItem<int>(
-                            value: c['id'] as int,
-                            child: Text(
-                              '${c['prenom'] ?? ''} ${c['nom'] ?? ''}',
+              content: Form(
+                key: formKey,
+                autovalidateMode: autoValidate
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<int>(
+                        value: clientId,
+                        decoration: const InputDecoration(labelText: 'Client'),
+                        items: [
+                          for (final c in clients)
+                            DropdownMenuItem<int>(
+                              value: c['id'] as int,
+                              child: Text(
+                                '${c['prenom'] ?? ''} ${c['nom'] ?? ''}',
+                              ),
                             ),
-                          ),
-                      ],
-                      onChanged: (value) =>
-                          setModalState(() => clientId = value),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: commentaireController,
-                      decoration: const InputDecoration(
-                        labelText: 'Commentaire',
+                        ],
+                        validator: (value) =>
+                            value == null ? 'Selectionnez un client' : null,
+                        onChanged: (value) =>
+                            setModalState(() => clientId = value),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: commentaireController,
+                        decoration: const InputDecoration(
+                          labelText: 'Commentaire',
+                        ),
+                        validator: (value) =>
+                            Validators.commentaire(value ?? ''),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -78,24 +90,11 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                 ),
                 FilledButton(
                   onPressed: () async {
+                    setModalState(() => autoValidate = true);
+                    if (!(formKey.currentState?.validate() ?? false)) {
+                      return;
+                    }
                     try {
-                      if (clientId == null) {
-                        showAppMessage(
-                          context,
-                          'Selectionnez un client',
-                          error: true,
-                        );
-                        return;
-                      }
-
-                      final commentError = Validators.commentaire(
-                        commentaireController.text,
-                      );
-                      if (commentError != null) {
-                        showAppMessage(context, commentError, error: true);
-                        return;
-                      }
-
                       await CommandesClientsService.create({
                         'clientId': clientId,
                         'commentaire': Validators.normalize(
@@ -177,6 +176,8 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
 
     int? articleId;
     final quantiteController = TextEditingController(text: '1');
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
     Future<List<JsonMap>> lignesFuture = CommandesClientsService.findLignes(
       commandeId,
     );
@@ -191,7 +192,12 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
               content: SizedBox(
                 width: 600,
                 height: 420,
-                child: Column(
+                child: Form(
+                  key: formKey,
+                  autovalidateMode: autoValidate
+                      ? AutovalidateMode.always
+                      : AutovalidateMode.disabled,
+                  child: Column(
                   children: [
                     Row(
                       children: [
@@ -213,6 +219,8 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                                   ),
                                 ),
                             ],
+                            validator: (value) =>
+                                value == null ? 'Selectionnez un article' : null,
                             onChanged: (value) =>
                                 setModalState(() => articleId = value),
                           ),
@@ -220,11 +228,16 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                         const SizedBox(width: 8),
                         SizedBox(
                           width: 110,
-                          child: TextField(
+                          child: TextFormField(
                             controller: quantiteController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               labelText: 'Quantite',
+                            ),
+                            validator: (value) => Validators.minIntRequired(
+                              value ?? '',
+                              'Quantite',
+                              1,
                             ),
                           ),
                         ),
@@ -235,22 +248,11 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                       alignment: Alignment.centerRight,
                       child: FilledButton.icon(
                         onPressed: () async {
+                          setModalState(() => autoValidate = true);
+                          if (!(formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
                           try {
-                            final quantiteError = Validators.minIntRequired(
-                              quantiteController.text,
-                              'Quantite',
-                              1,
-                            );
-                            if (articleId == null || quantiteError != null) {
-                              showAppMessage(
-                                context,
-                                quantiteError ??
-                                    'Selectionnez un article et une quantite valide',
-                                error: true,
-                              );
-                              return;
-                            }
-
                             final quantite = int.parse(
                               Validators.normalize(quantiteController.text),
                             );
@@ -352,6 +354,7 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                     ),
                   ],
                 ),
+                ),
               ),
               actions: [
                 TextButton(
@@ -378,7 +381,12 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
           return Center(child: Text(snapshot.error.toString()));
         }
 
-        final items = snapshot.data ?? [];
+        final items = [...(snapshot.data ?? <JsonMap>[])];
+        items.sort((a, b) {
+          final aId = (a['id'] as num?)?.toInt() ?? 0;
+          final bId = (b['id'] as num?)?.toInt() ?? 0;
+          return bId.compareTo(aId);
+        });
 
         return RefreshIndicator(
           onRefresh: () async => _refresh(),

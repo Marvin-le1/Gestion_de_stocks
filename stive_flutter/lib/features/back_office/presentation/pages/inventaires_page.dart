@@ -35,108 +35,119 @@ class _InventairesPageState extends State<InventairesPage> {
     final quantities = <int, TextEditingController>{
       for (final a in articles) a['id'] as int: TextEditingController(),
     };
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
 
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height * 0.8,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Nouvel inventaire',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: commentaireController,
-                  decoration: const InputDecoration(labelText: 'Commentaire'),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: articles.length,
-                    itemBuilder: (context, index) {
-                      final article = articles[index];
-                      final id = article['id'] as int;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: TextField(
-                          controller: quantities[id],
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText:
-                                '${article['designation']} - quantite constatee',
-                          ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: Form(
+                  key: formKey,
+                  autovalidateMode: autoValidate
+                      ? AutovalidateMode.always
+                      : AutovalidateMode.disabled,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nouvel inventaire',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: commentaireController,
+                        decoration: const InputDecoration(
+                          labelText: 'Commentaire',
                         ),
-                      );
-                    },
+                        validator: (value) =>
+                            Validators.commentaire(value ?? ''),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: articles.length,
+                          itemBuilder: (context, index) {
+                            final article = articles[index];
+                            final id = article['id'] as int;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: TextFormField(
+                                controller: quantities[id],
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  labelText:
+                                      '${article['designation']} - quantite constatee',
+                                ),
+                                validator: (value) =>
+                                    Validators.nonNegativeIntOptional(
+                                      value ?? '',
+                                      'Quantite constatee',
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: () async {
+                            setModalState(() => autoValidate = true);
+                            if (!(formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+                            try {
+                              final lignes = <JsonMap>[];
+                              for (final entry in quantities.entries) {
+                                final value = Validators.normalize(
+                                  entry.value.text,
+                                );
+                                if (value.isEmpty) {
+                                  continue;
+                                }
+                                final qty = int.tryParse(value);
+                                if (qty != null) {
+                                  lignes.add({
+                                    'articleId': entry.key,
+                                    'quantiteConstatee': qty,
+                                  });
+                                }
+                              }
+                              await InventairesService.create(
+                                commentaire: Validators.normalize(
+                                  commentaireController.text,
+                                ),
+                                lignes: lignes,
+                              );
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              _refresh();
+                            } catch (e) {
+                              if (!mounted) return;
+                              showAppMessage(context, e.toString(), error: true);
+                            }
+                          },
+                          child: const Text('Creer inventaire'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton(
-                    onPressed: () async {
-                      try {
-                        final commentError = Validators.commentaire(
-                          commentaireController.text,
-                        );
-                        if (commentError != null) {
-                          showAppMessage(context, commentError, error: true);
-                          return;
-                        }
-
-                        final lignes = <JsonMap>[];
-                        for (final entry in quantities.entries) {
-                          final value = Validators.normalize(entry.value.text);
-                          if (value.isEmpty) {
-                            continue;
-                          }
-                          final qtyError = Validators.nonNegativeIntOptional(
-                            value,
-                            'Quantite constatee',
-                          );
-                          if (qtyError != null) {
-                            showAppMessage(context, qtyError, error: true);
-                            return;
-                          }
-                          final qty = int.tryParse(value);
-                          if (qty != null) {
-                            lignes.add({
-                              'articleId': entry.key,
-                              'quantiteConstatee': qty,
-                            });
-                          }
-                        }
-                        await InventairesService.create(
-                          commentaire: Validators.normalize(
-                            commentaireController.text,
-                          ),
-                          lignes: lignes,
-                        );
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                        _refresh();
-                      } catch (e) {
-                        if (!mounted) return;
-                        showAppMessage(context, e.toString(), error: true);
-                      }
-                    },
-                    child: const Text('Creer inventaire'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -154,7 +165,12 @@ class _InventairesPageState extends State<InventairesPage> {
           return Center(child: Text(snapshot.error.toString()));
         }
 
-        final items = snapshot.data ?? [];
+        final items = [...(snapshot.data ?? <JsonMap>[])];
+        items.sort((a, b) {
+          final aId = (a['id'] as num?)?.toInt() ?? 0;
+          final bId = (b['id'] as num?)?.toInt() ?? 0;
+          return bId.compareTo(aId);
+        });
 
         return RefreshIndicator(
           onRefresh: () async => _refresh(),

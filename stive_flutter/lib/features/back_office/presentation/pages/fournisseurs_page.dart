@@ -50,115 +50,157 @@ class _FournisseursPageState extends State<FournisseursPage> {
         text: fournisseur?['contactNom'] as String? ?? '',
       ),
     };
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
+
+    String labelFor(String key) {
+      switch (key) {
+        case 'nom':
+          return 'Nom';
+        case 'adresse':
+          return 'Adresse';
+        case 'ville':
+          return 'Ville';
+        case 'codePostal':
+          return 'Code postal';
+        case 'telephone':
+          return 'Telephone';
+        case 'email':
+          return 'Email';
+        case 'contactNom':
+          return 'Nom du contact';
+        default:
+          return key;
+      }
+    }
+
+    String? validateField(String key, String value) {
+      switch (key) {
+        case 'nom':
+          return Validators.strictText(value, 'Nom', required: true);
+        case 'adresse':
+          return Validators.address(value);
+        case 'ville':
+          return Validators.strictText(
+            value,
+            'Ville',
+            maxLength: Validators.maxCityLength,
+          );
+        case 'codePostal':
+          return Validators.postalCodeInternational(value);
+        case 'telephone':
+          return Validators.phoneInternational(value);
+        case 'email':
+          return Validators.email(value);
+        case 'contactNom':
+          return Validators.strictText(value, 'Contact');
+        default:
+          return null;
+      }
+    }
 
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  fournisseur == null
-                      ? 'Nouveau fournisseur'
-                      : 'Modifier fournisseur',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                for (final entry in fields.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: TextField(
-                      controller: entry.value,
-                      decoration: InputDecoration(labelText: entry.key),
-                    ),
-                  ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton(
-                    onPressed: () async {
-                      try {
-                        final validations = [
-                          Validators.strictText(
-                            fields['nom']!.text,
-                            'Nom',
-                            required: true,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  autovalidateMode: autoValidate
+                      ? AutovalidateMode.always
+                      : AutovalidateMode.disabled,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fournisseur == null
+                            ? 'Nouveau fournisseur'
+                            : 'Modifier fournisseur',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      for (final entry in fields.entries)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: TextFormField(
+                            controller: entry.value,
+                            keyboardType: entry.key == 'email'
+                                ? TextInputType.emailAddress
+                                : entry.key == 'telephone' ||
+                                      entry.key == 'codePostal'
+                                ? TextInputType.phone
+                                : TextInputType.text,
+                            decoration: InputDecoration(
+                              labelText: labelFor(entry.key),
+                            ),
+                            validator: (value) =>
+                                validateField(entry.key, value ?? ''),
                           ),
-                          Validators.address(fields['adresse']!.text),
-                          Validators.strictText(
-                            fields['ville']!.text,
-                            'Ville',
-                            maxLength: Validators.maxCityLength,
-                          ),
-                          Validators.postalCodeInternational(
-                            fields['codePostal']!.text,
-                          ),
-                          Validators.phoneInternational(
-                            fields['telephone']!.text,
-                          ),
-                          Validators.email(fields['email']!.text),
-                          Validators.strictText(
-                            fields['contactNom']!.text,
-                            'Contact',
-                          ),
-                        ];
-
-                        final firstError = validations.firstWhere(
-                          (v) => v != null,
-                          orElse: () => null,
-                        );
-                        if (firstError != null) {
-                          showAppMessage(context, firstError, error: true);
-                          return;
-                        }
-
-                        final payload = {
-                          'nom': Validators.normalize(fields['nom']!.text),
-                          'adresse': Validators.normalize(
-                            fields['adresse']!.text,
-                          ),
-                          'ville': Validators.normalize(fields['ville']!.text),
-                          'codePostal': Validators.normalize(
-                            fields['codePostal']!.text,
-                          ),
-                          'telephone': Validators.normalize(
-                            fields['telephone']!.text,
-                          ),
-                          'email': Validators.normalize(fields['email']!.text),
-                          'contactNom': Validators.normalize(
-                            fields['contactNom']!.text,
-                          ),
-                        };
-                        if (fournisseur == null) {
-                          await FournisseursService.create(payload);
-                        } else {
-                          await FournisseursService.update(
-                            fournisseur['id'] as int,
-                            payload,
-                          );
-                        }
-                        if (!mounted) return;
-                        Navigator.pop(context);
-                        _refresh();
-                      } catch (e) {
-                        if (!mounted) return;
-                        showAppMessage(context, e.toString(), error: true);
-                      }
-                    },
-                    child: const Text('Enregistrer'),
+                        ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: () async {
+                            setModalState(() => autoValidate = true);
+                            if (!(formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+                            try {
+                              final payload = {
+                                'nom': Validators.normalize(fields['nom']!.text),
+                                'adresse': Validators.normalize(
+                                  fields['adresse']!.text,
+                                ),
+                                'ville': Validators.normalize(
+                                  fields['ville']!.text,
+                                ),
+                                'codePostal': Validators.normalize(
+                                  fields['codePostal']!.text,
+                                ),
+                                'telephone': Validators.normalize(
+                                  fields['telephone']!.text,
+                                ),
+                                'email': Validators.normalize(
+                                  fields['email']!.text,
+                                ),
+                                'contactNom': Validators.normalize(
+                                  fields['contactNom']!.text,
+                                ),
+                              };
+                              if (fournisseur == null) {
+                                await FournisseursService.create(payload);
+                              } else {
+                                await FournisseursService.update(
+                                  fournisseur['id'] as int,
+                                  payload,
+                                );
+                              }
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              _refresh();
+                            } catch (e) {
+                              if (!mounted) return;
+                              showAppMessage(context, e.toString(), error: true);
+                            }
+                          },
+                          child: const Text('Enregistrer'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -175,7 +217,12 @@ class _FournisseursPageState extends State<FournisseursPage> {
         if (snapshot.hasError) {
           return Center(child: Text(snapshot.error.toString()));
         }
-        final items = snapshot.data ?? [];
+        final items = [...(snapshot.data ?? <JsonMap>[])];
+        items.sort((a, b) {
+          final aId = (a['id'] as num?)?.toInt() ?? 0;
+          final bId = (b['id'] as num?)?.toInt() ?? 0;
+          return bId.compareTo(aId);
+        });
         return RefreshIndicator(
           onRefresh: () async => _refresh(),
           child: ListView(

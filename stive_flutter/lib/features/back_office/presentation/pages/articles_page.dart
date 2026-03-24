@@ -65,6 +65,58 @@ class _ArticlesPageState extends State<ArticlesPage> {
     int? familleId = (article?['famille'] as JsonMap?)?['id'] as int?;
     int? fournisseurId = (article?['fournisseur'] as JsonMap?)?['id'] as int?;
     bool reapproAuto = (article?['reapprovisionnementAuto'] as bool?) ?? true;
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
+
+    String labelFor(String key) {
+      switch (key) {
+        case 'reference':
+          return 'Reference';
+        case 'designation':
+          return 'Designation';
+        case 'description':
+          return 'Description';
+        case 'maison':
+          return 'Maison';
+        case 'annee':
+          return 'Annee';
+        case 'prixUnitaire':
+          return 'Prix unitaire';
+        case 'prixCarton':
+          return 'Prix carton';
+        case 'quantiteStock':
+          return 'Quantite en stock';
+        case 'seuilMinimum':
+          return 'Seuil minimum';
+        default:
+          return key;
+      }
+    }
+
+    String? validateField(String key, String value) {
+      switch (key) {
+        case 'reference':
+          return Validators.reference(value);
+        case 'designation':
+          return Validators.designation(value);
+        case 'description':
+          return Validators.optionalText(value, 'Description', 500);
+        case 'maison':
+          return Validators.optionalText(value, 'Maison', 120);
+        case 'annee':
+          return Validators.yearOptional(value);
+        case 'prixUnitaire':
+          return Validators.positiveDecimalRequired(value, 'Prix unitaire');
+        case 'prixCarton':
+          return Validators.nonNegativeDecimalOptional(value, 'Prix carton');
+        case 'quantiteStock':
+          return Validators.nonNegativeIntOptional(value, 'Quantite stock');
+        case 'seuilMinimum':
+          return Validators.nonNegativeIntOptional(value, 'Seuil minimum');
+        default:
+          return null;
+      }
+    }
 
     await showModalBottomSheet<void>(
       context: context,
@@ -80,196 +132,167 @@ class _ArticlesPageState extends State<ArticlesPage> {
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
               child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      article == null ? 'Nouvel article' : 'Modifier article',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    for (final entry in fields.entries)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: TextField(
-                          controller: entry.value,
-                          keyboardType:
-                              [
-                                'annee',
-                                'prixUnitaire',
-                                'prixCarton',
-                                'quantiteStock',
-                                'seuilMinimum',
-                              ].contains(entry.key)
-                              ? TextInputType.number
-                              : TextInputType.text,
-                          decoration: InputDecoration(labelText: entry.key),
+                child: Form(
+                  key: formKey,
+                  autovalidateMode: autoValidate
+                      ? AutovalidateMode.always
+                      : AutovalidateMode.disabled,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        article == null ? 'Nouvel article' : 'Modifier article',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      for (final entry in fields.entries)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: TextFormField(
+                            controller: entry.value,
+                            keyboardType:
+                                [
+                                  'annee',
+                                  'prixUnitaire',
+                                  'prixCarton',
+                                  'quantiteStock',
+                                  'seuilMinimum',
+                                ].contains(entry.key)
+                                ? const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  )
+                                : TextInputType.text,
+                            decoration: InputDecoration(
+                              labelText: labelFor(entry.key),
+                            ),
+                            validator: (value) =>
+                                validateField(entry.key, value ?? ''),
+                          ),
+                        ),
+                      DropdownButtonFormField<int>(
+                        value: familleId,
+                        decoration: const InputDecoration(
+                          labelText: 'Famille',
+                        ),
+                        items: [
+                          for (final f in familles)
+                            DropdownMenuItem<int>(
+                              value: f['id'] as int,
+                              child: Text('${f['type']}'),
+                            ),
+                        ],
+                        validator: (value) =>
+                            value == null ? 'Famille est requise' : null,
+                        onChanged: (value) =>
+                            setModalState(() => familleId = value),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: fournisseurId,
+                        decoration: const InputDecoration(
+                          labelText: 'Fournisseur',
+                        ),
+                        items: [
+                          for (final f in fournisseurs)
+                            DropdownMenuItem<int>(
+                              value: f['id'] as int,
+                              child: Text('${f['nom']}'),
+                            ),
+                        ],
+                        validator: (value) =>
+                            value == null ? 'Fournisseur est requis' : null,
+                        onChanged: (value) =>
+                            setModalState(() => fournisseurId = value),
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: reapproAuto,
+                        onChanged: (value) =>
+                            setModalState(() => reapproAuto = value),
+                        title: const Text('Reapprovisionnement auto'),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: FilledButton(
+                          onPressed: () async {
+                            setModalState(() => autoValidate = true);
+                            if (!(formKey.currentState?.validate() ?? false)) {
+                              return;
+                            }
+
+                            try {
+                              final payload = {
+                                'reference': Validators.normalize(
+                                  fields['reference']!.text,
+                                ),
+                                'designation': Validators.normalize(
+                                  fields['designation']!.text,
+                                ),
+                                'description': Validators.normalize(
+                                  fields['description']!.text,
+                                ),
+                                'maison': Validators.normalize(
+                                  fields['maison']!.text,
+                                ),
+                                'annee': int.tryParse(
+                                  Validators.normalize(fields['annee']!.text),
+                                ),
+                                'prixUnitaire':
+                                    double.tryParse(
+                                      Validators.normalize(
+                                        fields['prixUnitaire']!.text,
+                                      ).replaceAll(',', '.'),
+                                    ) ??
+                                    0,
+                                'prixCarton':
+                                    double.tryParse(
+                                      Validators.normalize(
+                                        fields['prixCarton']!.text,
+                                      ).replaceAll(',', '.'),
+                                    ) ??
+                                    0,
+                                'quantiteStock':
+                                    int.tryParse(
+                                      Validators.normalize(
+                                        fields['quantiteStock']!.text,
+                                      ),
+                                    ) ??
+                                    0,
+                                'seuilMinimum':
+                                    int.tryParse(
+                                      Validators.normalize(
+                                        fields['seuilMinimum']!.text,
+                                      ),
+                                    ) ??
+                                    0,
+                                'reapprovisionnementAuto': reapproAuto,
+                                'familleId': familleId,
+                                'fournisseurId': fournisseurId,
+                              };
+
+                              if (article == null) {
+                                await ArticlesService.create(payload);
+                              } else {
+                                await ArticlesService.update(
+                                  article['id'] as int,
+                                  payload,
+                                );
+                              }
+
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              _refresh();
+                            } catch (e) {
+                              if (!mounted) return;
+                              showAppMessage(context, e.toString(), error: true);
+                            }
+                          },
+                          child: const Text('Enregistrer'),
                         ),
                       ),
-                    DropdownButtonFormField<int>(
-                      value: familleId,
-                      decoration: const InputDecoration(labelText: 'familleId'),
-                      items: [
-                        for (final f in familles)
-                          DropdownMenuItem<int>(
-                            value: f['id'] as int,
-                            child: Text('${f['type']}'),
-                          ),
-                      ],
-                      onChanged: (value) =>
-                          setModalState(() => familleId = value),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<int>(
-                      value: fournisseurId,
-                      decoration: const InputDecoration(
-                        labelText: 'fournisseurId',
-                      ),
-                      items: [
-                        for (final f in fournisseurs)
-                          DropdownMenuItem<int>(
-                            value: f['id'] as int,
-                            child: Text('${f['nom']}'),
-                          ),
-                      ],
-                      onChanged: (value) =>
-                          setModalState(() => fournisseurId = value),
-                    ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: reapproAuto,
-                      onChanged: (value) =>
-                          setModalState(() => reapproAuto = value),
-                      title: const Text('Reapprovisionnement auto'),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton(
-                        onPressed: () async {
-                          try {
-                            final validations = [
-                              Validators.reference(fields['reference']!.text),
-                              Validators.designation(
-                                fields['designation']!.text,
-                              ),
-                              Validators.optionalText(
-                                fields['description']!.text,
-                                'Description',
-                                500,
-                              ),
-                              Validators.optionalText(
-                                fields['maison']!.text,
-                                'Maison',
-                                120,
-                              ),
-                              Validators.yearOptional(fields['annee']!.text),
-                              Validators.positiveDecimalRequired(
-                                fields['prixUnitaire']!.text,
-                                'Prix unitaire',
-                              ),
-                              Validators.nonNegativeDecimalOptional(
-                                fields['prixCarton']!.text,
-                                'Prix carton',
-                              ),
-                              Validators.nonNegativeIntOptional(
-                                fields['quantiteStock']!.text,
-                                'Quantite stock',
-                              ),
-                              Validators.nonNegativeIntOptional(
-                                fields['seuilMinimum']!.text,
-                                'Seuil minimum',
-                              ),
-                            ];
-
-                            final firstError = validations.firstWhere(
-                              (v) => v != null,
-                              orElse: () => null,
-                            );
-                            if (firstError != null) {
-                              showAppMessage(context, firstError, error: true);
-                              return;
-                            }
-
-                            if (familleId == null || fournisseurId == null) {
-                              showAppMessage(
-                                context,
-                                'Champs obligatoires manquants',
-                                error: true,
-                              );
-                              return;
-                            }
-
-                            final payload = {
-                              'reference': Validators.normalize(
-                                fields['reference']!.text,
-                              ),
-                              'designation': Validators.normalize(
-                                fields['designation']!.text,
-                              ),
-                              'description': Validators.normalize(
-                                fields['description']!.text,
-                              ),
-                              'maison': Validators.normalize(
-                                fields['maison']!.text,
-                              ),
-                              'annee': int.tryParse(
-                                Validators.normalize(fields['annee']!.text),
-                              ),
-                              'prixUnitaire':
-                                  double.tryParse(
-                                    Validators.normalize(
-                                      fields['prixUnitaire']!.text,
-                                    ).replaceAll(',', '.'),
-                                  ) ??
-                                  0,
-                              'prixCarton':
-                                  double.tryParse(
-                                    Validators.normalize(
-                                      fields['prixCarton']!.text,
-                                    ).replaceAll(',', '.'),
-                                  ) ??
-                                  0,
-                              'quantiteStock':
-                                  int.tryParse(
-                                    Validators.normalize(
-                                      fields['quantiteStock']!.text,
-                                    ),
-                                  ) ??
-                                  0,
-                              'seuilMinimum':
-                                  int.tryParse(
-                                    Validators.normalize(
-                                      fields['seuilMinimum']!.text,
-                                    ),
-                                  ) ??
-                                  0,
-                              'reapprovisionnementAuto': reapproAuto,
-                              'familleId': familleId,
-                              'fournisseurId': fournisseurId,
-                            };
-
-                            if (article == null) {
-                              await ArticlesService.create(payload);
-                            } else {
-                              await ArticlesService.update(
-                                article['id'] as int,
-                                payload,
-                              );
-                            }
-
-                            if (!mounted) return;
-                            Navigator.pop(context);
-                            _refresh();
-                          } catch (e) {
-                            if (!mounted) return;
-                            showAppMessage(context, e.toString(), error: true);
-                          }
-                        },
-                        child: const Text('Enregistrer'),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );
@@ -281,49 +304,62 @@ class _ArticlesPageState extends State<ArticlesPage> {
 
   Future<void> _adjustStock(JsonMap article) async {
     final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool autoValidate = false;
     await showDialog<void>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Ajuster le stock'),
-          content: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Quantite (+/-)'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                try {
-                  final message = Validators.nonNegativeIntOptional(
-                    controller.text,
-                    'Quantite',
-                  );
-                  if (message != null) {
-                    showAppMessage(context, message, error: true);
-                    return;
-                  }
-                  final quantite =
-                      int.tryParse(Validators.normalize(controller.text)) ?? 0;
-                  await ArticlesService.ajusterStock(
-                    article['id'] as int,
-                    quantite,
-                  );
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  _refresh();
-                } catch (e) {
-                  if (!mounted) return;
-                  showAppMessage(context, e.toString(), error: true);
-                }
-              },
-              child: const Text('Valider'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: const Text('Ajuster le stock'),
+              content: Form(
+                key: formKey,
+                autovalidateMode: autoValidate
+                    ? AutovalidateMode.always
+                    : AutovalidateMode.disabled,
+                child: TextFormField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantite (+/-)',
+                  ),
+                  validator: (value) =>
+                      Validators.nonNegativeIntOptional(value ?? '', 'Quantite'),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    setModalState(() => autoValidate = true);
+                    if (!(formKey.currentState?.validate() ?? false)) {
+                      return;
+                    }
+                    try {
+                      final quantite =
+                          int.tryParse(Validators.normalize(controller.text)) ??
+                          0;
+                      await ArticlesService.ajusterStock(
+                        article['id'] as int,
+                        quantite,
+                      );
+                      if (!mounted) return;
+                      Navigator.pop(context);
+                      _refresh();
+                    } catch (e) {
+                      if (!mounted) return;
+                      showAppMessage(context, e.toString(), error: true);
+                    }
+                  },
+                  child: const Text('Valider'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -341,7 +377,12 @@ class _ArticlesPageState extends State<ArticlesPage> {
           return Center(child: Text(snapshot.error.toString()));
         }
 
-        final items = snapshot.data ?? [];
+        final items = [...(snapshot.data ?? <JsonMap>[])];
+        items.sort((a, b) {
+          final aId = (a['id'] as num?)?.toInt() ?? 0;
+          final bId = (b['id'] as num?)?.toInt() ?? 0;
+          return bId.compareTo(aId);
+        });
 
         return RefreshIndicator(
           onRefresh: () async => _refresh(),
