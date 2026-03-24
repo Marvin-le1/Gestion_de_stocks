@@ -32,7 +32,7 @@ public class Utilisateur implements UserDetails {
     private String nom;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(20)")
     private Role role;
 
     @Override
