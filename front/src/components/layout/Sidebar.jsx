@@ -12,6 +12,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { useAuth } from '../../contexts/AuthContext';
 
 const DRAWER_WIDTH = 240;
@@ -26,10 +27,13 @@ const NAV_ITEMS = [
   { label: 'Commandes fournisseurs',to: '/commandes-fournisseurs',icon: <AssignmentIcon /> },
   { divider: true },
   { label: 'Inventaire',            to: '/inventaire',            icon: <InventoryIcon /> },
+  { divider: true, adminOnly: true },
+  { label: 'Utilisateurs',          to: '/utilisateurs',          icon: <ManageAccountsIcon />, adminOnly: true },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -65,7 +69,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <Box sx={{ overflow: 'auto', mt: 1, flexGrow: 1 }}>
         <List dense>
-          {NAV_ITEMS.map((item, idx) =>
+          {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item, idx) =>
             item.divider ? (
               <Divider key={idx} sx={{ my: 1 }} />
             ) : (

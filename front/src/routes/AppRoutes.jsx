@@ -14,6 +14,7 @@ import CommandeClientDetail from '../pages/commandes-clients/CommandeClientDetai
 import CommandesFournisseurs from '../pages/commandes-fournisseurs/CommandesFournisseurs';
 import CommandeFournisseurDetail from '../pages/commandes-fournisseurs/CommandeFournisseurDetail';
 import Inventaire from '../pages/inventaire/Inventaire';
+import Utilisateurs from '../pages/utilisateurs/Utilisateurs';
 
 // Boutique (front-office client)
 import ShopLayout from '../components/layout/ShopLayout';
@@ -27,6 +28,13 @@ import Contact from '../pages/shop/Contact';
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/login" replace />;
+}
+
+function AdminRoute({ children }) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== 'ADMIN') return <Navigate to="/articles" replace />;
+  return children;
 }
 
 export default function AppRoutes() {
@@ -60,6 +68,14 @@ export default function AppRoutes() {
         <Route path="/commandes-fournisseurs" element={<CommandesFournisseurs />} />
         <Route path="/commandes-fournisseurs/:id" element={<CommandeFournisseurDetail />} />
         <Route path="/inventaire" element={<Inventaire />} />
+        <Route
+          path="/utilisateurs"
+          element={
+            <AdminRoute>
+              <Utilisateurs />
+            </AdminRoute>
+          }
+        />
       </Route>
 
       {/* Racine et routes inconnues → boutique */}

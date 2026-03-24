@@ -4,7 +4,10 @@ import {
   DialogActions, Button,
 } from '@mui/material';
 
-export default function ConfirmDialog({ open, title, message, onConfirm, onCancel }) {
+export default function ConfirmDialog({
+  open, title, message, onConfirm, onCancel,
+  confirmLabel = 'Confirmer', confirmColor = 'error',
+}) {
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
       <DialogTitle>{title || 'Confirmation'}</DialogTitle>
@@ -13,8 +16,8 @@ export default function ConfirmDialog({ open, title, message, onConfirm, onCance
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel}>Annuler</Button>
-        <Button onClick={onConfirm} color="error" variant="contained">
-          Confirmer
+        <Button onClick={onConfirm} color={confirmColor} variant="contained">
+          {confirmLabel}
         </Button>
       </DialogActions>
     </Dialog>

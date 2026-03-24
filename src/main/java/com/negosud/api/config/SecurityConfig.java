@@ -39,14 +39,16 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Auth
-                .requestMatchers("/api/auth/**").permitAll()
+                // Auth — seul le login est public
+                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 // Swagger
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 // Boutique front-office — lecture catalogue et passage de commande publics
                 .requestMatchers(HttpMethod.GET, "/api/articles/**", "/api/familles/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/clients", "/api/clients/find-or-create", "/api/commandes-clients").permitAll()
-                // Tout le reste nécessite une authentification
+                // Gestion utilisateurs — réservée à l'admin
+                .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN")
+                // Tout le reste nécessite une authentification (ADMIN ou EMPLOYE)
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
