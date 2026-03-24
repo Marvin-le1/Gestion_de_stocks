@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clients")
@@ -44,6 +45,33 @@ public class ClientController {
     @Operation(summary = "Créer un nouveau client")
     public ResponseEntity<ClientResponseDto> create(@Valid @RequestBody ClientRequestDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clientService.create(dto));
+    }
+
+    @GetMapping("/by-email")
+    @Operation(summary = "Trouver un client par email — pré-remplissage boutique")
+    public ResponseEntity<ClientResponseDto> findByEmail(@RequestParam String email) {
+        return clientService.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/login")
+    @Operation(summary = "Connexion client boutique (email + mot de passe)")
+    public ResponseEntity<?> loginClient(@RequestBody Map<String, String> body) {
+        try {
+            ClientResponseDto client = clientService.loginClient(body.get("email"), body.get("motDePasse"));
+            return ResponseEntity.ok(client);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/has-password")
+    @Operation(summary = "Vérifier si un client a un mot de passe (boutique)")
+    public ResponseEntity<Map<String, Object>> hasPassword(@RequestParam String email) {
+        boolean exists = clientService.findByEmail(email).isPresent();
+        boolean hasPassword = clientService.hasPassword(email);
+        return ResponseEntity.ok(Map.of("exists", exists, "hasPassword", hasPassword));
     }
 
     @PostMapping("/find-or-create")

@@ -45,7 +45,8 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 // Boutique front-office — lecture catalogue et passage de commande publics
                 .requestMatchers(HttpMethod.GET, "/api/articles/**", "/api/familles/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/clients", "/api/clients/find-or-create", "/api/commandes-clients").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/clients/by-email", "/api/clients/has-password").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/clients", "/api/clients/find-or-create", "/api/clients/login", "/api/commandes-clients").permitAll()
                 // Gestion utilisateurs — réservée à l'admin
                 .requestMatchers("/api/utilisateurs/**").hasRole("ADMIN")
                 // Tout le reste nécessite une authentification (ADMIN ou EMPLOYE)

@@ -22,4 +22,7 @@ public class ClientRequestDto {
     private String ville;
     private String codePostal;
     private String pays;
+
+    /** Optionnel — pour créer un compte lors de la première commande */
+    private String motDePasse;
 }
