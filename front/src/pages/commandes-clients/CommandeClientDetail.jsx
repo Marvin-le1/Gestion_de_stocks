@@ -15,7 +15,14 @@ import { commandeClientService } from '../../services/commandeClientService';
 import { articleService } from '../../services/articleService';
 
 const STATUT_COLORS = { EN_ATTENTE: 'warning', VALIDEE: 'info', LIVREE: 'success', ANNULEE: 'error' };
-const STATUTS = ['EN_ATTENTE', 'VALIDEE', 'LIVREE', 'ANNULEE'];
+
+// Transitions autorisées par statut
+const TRANSITIONS = {
+  EN_ATTENTE: ['VALIDEE', 'ANNULEE'],
+  VALIDEE:    ['LIVREE', 'ANNULEE'],
+  LIVREE:     [],
+  ANNULEE:    [],
+};
 
 export default function CommandeClientDetail() {
   const { id } = useParams();
@@ -84,7 +91,8 @@ export default function CommandeClientDetail() {
   if (!commande) return null;
 
   const total = commande.lignes?.reduce((sum, l) => sum + l.quantite * Number(l.prixUnitaire), 0) || 0;
-  const isEditable = commande.statut === 'EN_ATTENTE';
+  const isEditable = commande.statut === 'EN_ATTENTE';           // ajout/suppression de lignes
+  const nextStatuts = TRANSITIONS[commande.statut] || [];        // boutons de transition disponibles
 
   return (
     <Box>
@@ -113,11 +121,19 @@ export default function CommandeClientDetail() {
         </Stack>
       </Paper>
 
-      {isEditable && (
-        <Stack direction="row" spacing={1} mb={2}>
+      {nextStatuts.length > 0 && (
+        <Stack direction="row" spacing={1} mb={2} alignItems="center">
           <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>Changer le statut :</Typography>
-          {STATUTS.filter((s) => s !== commande.statut).map((s) => (
-            <Button key={s} size="small" variant="outlined" onClick={() => handleStatut(s)}>{s}</Button>
+          {nextStatuts.map((s) => (
+            <Button
+              key={s}
+              size="small"
+              variant="outlined"
+              color={STATUT_COLORS[s] || 'primary'}
+              onClick={() => handleStatut(s)}
+            >
+              {s}
+            </Button>
           ))}
         </Stack>
       )}
