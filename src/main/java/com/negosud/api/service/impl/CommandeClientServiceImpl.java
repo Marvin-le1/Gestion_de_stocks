@@ -110,6 +110,19 @@ public class CommandeClientServiceImpl implements CommandeClientService {
     @Override
     public CommandeClientResponseDto changerStatut(Long id, StatutCommandeDto dto) {
         CommandeClient commande = getOrThrow(id);
+
+        // Décrémenter le stock uniquement lors du passage à LIVREE (une seule fois)
+        if (dto.getStatut() == StatutCommande.LIVREE
+                && commande.getStatut() != StatutCommande.LIVREE) {
+            for (LigneCommandeClient ligne : commande.getLignes()) {
+                Article article = ligne.getArticle();
+                article.setQuantiteStock(article.getQuantiteStock() - ligne.getQuantite());
+                articleRepository.save(article);
+            }
+            // Vérifier le réapprovisionnement auto après mise à jour du stock
+            verifierEtDeclencher_Reapprovisionnement(commande);
+        }
+
         commande.setStatut(dto.getStatut());
         return commandeClientMapper.toResponseDto(commandeClientRepository.save(commande));
     }
