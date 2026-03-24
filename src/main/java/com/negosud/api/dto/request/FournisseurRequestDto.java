@@ -13,6 +13,7 @@ public class FournisseurRequestDto {
     private String adresse;
     private String ville;
     private String codePostal;
+    private String pays;
     private String telephone;
 
     @Email(message = "Email invalide")

@@ -21,4 +21,5 @@ public class ClientRequestDto {
     private String adresse;
     private String ville;
     private String codePostal;
+    private String pays;
 }

@@ -1,8 +1,10 @@
 package com.negosud.api.service;
 
 import com.negosud.api.dto.request.CommandeFournisseurRequestDto;
+import com.negosud.api.dto.request.LigneCommandeRequestDto;
 import com.negosud.api.dto.request.StatutCommandeDto;
 import com.negosud.api.dto.response.CommandeFournisseurResponseDto;
+import com.negosud.api.dto.response.LigneCommandeFournisseurResponseDto;
 
 import java.util.List;
 
@@ -21,6 +23,10 @@ public interface CommandeFournisseurService {
      * Si le statut passe à LIVREE, le stock des articles est mis à jour automatiquement.
      */
     CommandeFournisseurResponseDto changerStatut(Long id, StatutCommandeDto dto);
+
+    LigneCommandeFournisseurResponseDto ajouterLigne(Long id, LigneCommandeRequestDto dto);
+
+    void supprimerLigne(Long commandeId, Long ligneId);
 
     void delete(Long id);
 
