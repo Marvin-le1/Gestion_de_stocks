@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../auth/models/auth_session.dart';
 import '../../auth/services/auth_identity_service.dart';
 import '../../../../core/utils/types.dart';
 import '../../shared/models/cart_item.dart';
@@ -9,15 +10,17 @@ import 'pages/client_panier_page.dart';
 
 class FrontOfficeShellPage extends StatefulWidget {
   const FrontOfficeShellPage({
-    required this.userEmail,
-    required this.onLogout,
-    required this.onOpenProfile,
+    this.session,
+    this.onLogout,
+    this.onOpenProfile,
+    this.onOpenManagerLogin,
     super.key,
   });
 
-  final String userEmail;
-  final Future<void> Function() onLogout;
-  final VoidCallback onOpenProfile;
+  final AuthSession? session;
+  final Future<void> Function()? onLogout;
+  final VoidCallback? onOpenProfile;
+  final Future<void> Function()? onOpenManagerLogin;
 
   @override
   State<FrontOfficeShellPage> createState() => _FrontOfficeShellPageState();
@@ -26,19 +29,24 @@ class FrontOfficeShellPage extends StatefulWidget {
 class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
   int _index = 0;
   final List<CartItem> _cart = [];
-  late Future<JsonMap> _clientFuture;
+  Future<JsonMap>? _clientFuture;
 
   @override
   void initState() {
     super.initState();
-    _clientFuture = _resolveClient();
+    if (_isClient) {
+      _clientFuture = _resolveClient();
+    }
   }
 
+  bool get _isClient => widget.session?.isClient ?? false;
+
   Future<JsonMap> _resolveClient() async {
-    final client = await AuthIdentityService.findClientByEmail(widget.userEmail);
+    final userEmail = widget.session?.email ?? '';
+    final client = await AuthIdentityService.findClientByEmail(userEmail);
     if (client == null) {
       throw StateError(
-        'Aucun client associe a ${widget.userEmail}. Verifiez la correspondance email.',
+        'Aucun client associe a $userEmail. Verifiez la correspondance email.',
       );
     }
     return client;
@@ -59,13 +67,39 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
 
   void _clearCart() => setState(_cart.clear);
 
+  Future<void> _openManagerLogin() async {
+    final callback = widget.onOpenManagerLogin;
+    if (callback != null) {
+      await callback();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_isClient) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Boutique'),
+          actions: [
+            FilledButton.tonalIcon(
+              onPressed: _openManagerLogin,
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              label: const Text('Espace gerant'),
+            ),
+            const SizedBox(width: 12),
+          ],
+        ),
+        body: ClientCataloguePage(onAddToCart: _addToCart),
+      );
+    }
+
     return FutureBuilder<JsonMap>(
       future: _clientFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         if (snapshot.hasError) {
           return Scaffold(
@@ -76,10 +110,13 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(snapshot.error.toString(), textAlign: TextAlign.center),
+                    Text(
+                      snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: 10),
                     FilledButton(
-                      onPressed: () async => widget.onLogout(),
+                      onPressed: () async => await widget.onLogout?.call(),
                       child: const Text('Se deconnecter'),
                     ),
                   ],
@@ -105,7 +142,9 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
         return Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            title: Text('Boutique • ${client['prenom'] ?? ''} ${client['nom'] ?? ''}'),
+            title: Text(
+              'Boutique • ${client['prenom'] ?? ''} ${client['nom'] ?? ''}',
+            ),
             actions: [
               IconButton(
                 tooltip: 'Mon profil',
@@ -116,7 +155,7 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
                 tooltip: 'Se deconnecter',
                 icon: const Icon(Icons.logout),
                 onPressed: () async {
-                  await widget.onLogout();
+                  await widget.onLogout?.call();
                 },
               ),
             ],

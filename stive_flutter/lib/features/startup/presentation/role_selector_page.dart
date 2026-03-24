@@ -53,11 +53,7 @@ class RoleSelectorPage extends StatelessWidget {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => FrontOfficeShellPage(
-                            userEmail: '',
-                            onLogout: () async {},
-                            onOpenProfile: () {},
-                          ),
+                          builder: (_) => const FrontOfficeShellPage(),
                         ),
                       );
                     },

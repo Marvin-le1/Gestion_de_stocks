@@ -30,8 +30,8 @@ class _BackOfficeShellPageState extends State<BackOfficeShellPage> {
     _NavItem('Familles', Icons.local_bar_outlined),
     _NavItem('Fournisseurs', Icons.store_outlined),
     _NavItem('Clients', Icons.people_alt_outlined),
-    _NavItem('Cmd clients', Icons.receipt_long_outlined),
-    _NavItem('Cmd fourn.', Icons.local_shipping_outlined),
+    _NavItem('Commande clients', Icons.receipt_long_outlined),
+    _NavItem('Commande fournisseurs', Icons.local_shipping_outlined),
     _NavItem('Inventaires', Icons.fact_check_outlined),
   ];
 
