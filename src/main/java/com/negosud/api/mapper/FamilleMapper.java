@@ -3,15 +3,31 @@ package com.negosud.api.mapper;
 import com.negosud.api.dto.request.FamilleRequestDto;
 import com.negosud.api.dto.response.FamilleResponseDto;
 import com.negosud.api.model.entity.Famille;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
-public interface FamilleMapper {
+@Component
+public class FamilleMapper {
 
-    FamilleResponseDto toResponseDto(Famille famille);
+    public FamilleResponseDto toResponseDto(Famille famille) {
+        if (famille == null) return null;
+        FamilleResponseDto dto = new FamilleResponseDto();
+        dto.setId(famille.getId());
+        dto.setType(famille.getType());
+        dto.setDescription(famille.getDescription());
+        return dto;
+    }
 
-    Famille toEntity(FamilleRequestDto dto);
+    public Famille toEntity(FamilleRequestDto dto) {
+        if (dto == null) return null;
+        Famille famille = new Famille();
+        famille.setType(dto.getType());
+        famille.setDescription(dto.getDescription());
+        return famille;
+    }
 
-    void updateEntityFromDto(FamilleRequestDto dto, @MappingTarget Famille famille);
+    public void updateEntityFromDto(FamilleRequestDto dto, Famille famille) {
+        if (dto == null || famille == null) return;
+        famille.setType(dto.getType());
+        famille.setDescription(dto.getDescription());
+    }
 }
