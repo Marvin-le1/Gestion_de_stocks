@@ -7,14 +7,17 @@ import WineBarIcon from '@mui/icons-material/WineBar';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import { clientService } from '../../services/clientService';
 import { useShopAuth } from '../../contexts/ShopAuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function BoutiqueLogin() {
-  const { loginShop } = useShopAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from || '/boutique';
+  const { loginShop }  = useShopAuth();
+  const { login }      = useAuth();
+  const navigate       = useNavigate();
+  const location       = useLocation();
+  const from           = location.state?.from || '/boutique';
 
   const [email, setEmail]           = useState('');
   const [motDePasse, setMotDePasse] = useState('');
@@ -37,11 +40,28 @@ export default function BoutiqueLogin() {
     setLoginError('');
     setLoading(true);
     try {
-      const res = await clientService.loginClient(email, motDePasse);
-      loginShop(res.data);
-      navigate(from, { replace: true });
-    } catch (err) {
-      setLoginError(err.response?.data || 'Email ou mot de passe incorrect');
+      // 1. Essai login client boutique
+      try {
+        const res = await clientService.loginClient(email, motDePasse);
+        loginShop(res.data);
+        navigate(from, { replace: true });
+        return;
+      } catch {
+        // Pas un client — on essaie le compte back-office
+      }
+
+      // 2. Essai login admin / employé
+      try {
+        const userData = await login(email, motDePasse);
+        if (userData.role === 'ADMIN' || userData.role === 'EMPLOYE') {
+          navigate('/articles', { replace: true });
+          return;
+        }
+      } catch {
+        // Pas un compte back-office non plus
+      }
+
+      setLoginError('Email ou mot de passe incorrect');
     } finally {
       setLoading(false);
     }
