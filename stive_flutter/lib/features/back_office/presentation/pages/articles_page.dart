@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/types.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../shared/services/articles_service.dart';
 import '../../../shared/services/familles_service.dart';
 import '../../../shared/services/fournisseurs_service.dart';
@@ -23,7 +24,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
     _future = ArticlesService.findAll();
   }
 
-  void _refresh() => setState(() => _future = ArticlesService.findAll());
+  void _refresh() => setState(() {
+        _future = ArticlesService.findAll();
+      });
 
   Future<void> _openForm({JsonMap? article}) async {
     final familles = await FamillesService.findAll();
@@ -145,10 +148,50 @@ class _ArticlesPageState extends State<ArticlesPage> {
                       child: FilledButton(
                         onPressed: () async {
                           try {
-                            if (fields['reference']!.text.trim().isEmpty ||
-                                fields['designation']!.text.trim().isEmpty ||
-                                familleId == null ||
-                                fournisseurId == null) {
+                            final validations = [
+                              Validators.reference(fields['reference']!.text),
+                              Validators.designation(
+                                fields['designation']!.text,
+                              ),
+                              Validators.optionalText(
+                                fields['description']!.text,
+                                'Description',
+                                500,
+                              ),
+                              Validators.optionalText(
+                                fields['maison']!.text,
+                                'Maison',
+                                120,
+                              ),
+                              Validators.yearOptional(fields['annee']!.text),
+                              Validators.positiveDecimalRequired(
+                                fields['prixUnitaire']!.text,
+                                'Prix unitaire',
+                              ),
+                              Validators.nonNegativeDecimalOptional(
+                                fields['prixCarton']!.text,
+                                'Prix carton',
+                              ),
+                              Validators.nonNegativeIntOptional(
+                                fields['quantiteStock']!.text,
+                                'Quantite stock',
+                              ),
+                              Validators.nonNegativeIntOptional(
+                                fields['seuilMinimum']!.text,
+                                'Seuil minimum',
+                              ),
+                            ];
+
+                            final firstError = validations.firstWhere(
+                              (v) => v != null,
+                              orElse: () => null,
+                            );
+                            if (firstError != null) {
+                              showAppMessage(context, firstError, error: true);
+                              return;
+                            }
+
+                            if (familleId == null || fournisseurId == null) {
                               showAppMessage(
                                 context,
                                 'Champs obligatoires manquants',
@@ -158,31 +201,47 @@ class _ArticlesPageState extends State<ArticlesPage> {
                             }
 
                             final payload = {
-                              'reference': fields['reference']!.text.trim(),
-                              'designation': fields['designation']!.text.trim(),
-                              'description': fields['description']!.text.trim(),
-                              'maison': fields['maison']!.text.trim(),
+                              'reference': Validators.normalize(
+                                fields['reference']!.text,
+                              ),
+                              'designation': Validators.normalize(
+                                fields['designation']!.text,
+                              ),
+                              'description': Validators.normalize(
+                                fields['description']!.text,
+                              ),
+                              'maison': Validators.normalize(
+                                fields['maison']!.text,
+                              ),
                               'annee': int.tryParse(
-                                fields['annee']!.text.trim(),
+                                Validators.normalize(fields['annee']!.text),
                               ),
                               'prixUnitaire':
                                   double.tryParse(
-                                    fields['prixUnitaire']!.text.trim(),
+                                    Validators.normalize(
+                                      fields['prixUnitaire']!.text,
+                                    ).replaceAll(',', '.'),
                                   ) ??
                                   0,
                               'prixCarton':
                                   double.tryParse(
-                                    fields['prixCarton']!.text.trim(),
+                                    Validators.normalize(
+                                      fields['prixCarton']!.text,
+                                    ).replaceAll(',', '.'),
                                   ) ??
                                   0,
                               'quantiteStock':
                                   int.tryParse(
-                                    fields['quantiteStock']!.text.trim(),
+                                    Validators.normalize(
+                                      fields['quantiteStock']!.text,
+                                    ),
                                   ) ??
                                   0,
                               'seuilMinimum':
                                   int.tryParse(
-                                    fields['seuilMinimum']!.text.trim(),
+                                    Validators.normalize(
+                                      fields['seuilMinimum']!.text,
+                                    ),
                                   ) ??
                                   0,
                               'reapprovisionnementAuto': reapproAuto,
@@ -240,7 +299,16 @@ class _ArticlesPageState extends State<ArticlesPage> {
             FilledButton(
               onPressed: () async {
                 try {
-                  final quantite = int.tryParse(controller.text.trim()) ?? 0;
+                  final message = Validators.nonNegativeIntOptional(
+                    controller.text,
+                    'Quantite',
+                  );
+                  if (message != null) {
+                    showAppMessage(context, message, error: true);
+                    return;
+                  }
+                  final quantite =
+                      int.tryParse(Validators.normalize(controller.text)) ?? 0;
                   await ArticlesService.ajusterStock(
                     article['id'] as int,
                     quantite,

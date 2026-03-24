@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/types.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../shared/services/articles_service.dart';
 import '../../../shared/services/clients_service.dart';
 import '../../../shared/services/commandes_clients_service.dart';
@@ -24,7 +25,9 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
   }
 
   void _refresh() =>
-      setState(() => _future = CommandesClientsService.findAll());
+      setState(() {
+        _future = CommandesClientsService.findAll();
+      });
 
   Future<void> _createCommande() async {
     final clients = await ClientsService.findAll();
@@ -84,9 +87,20 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                         );
                         return;
                       }
+
+                      final commentError = Validators.commentaire(
+                        commentaireController.text,
+                      );
+                      if (commentError != null) {
+                        showAppMessage(context, commentError, error: true);
+                        return;
+                      }
+
                       await CommandesClientsService.create({
                         'clientId': clientId,
-                        'commentaire': commentaireController.text.trim(),
+                        'commentaire': Validators.normalize(
+                          commentaireController.text,
+                        ),
                         'lignes': <JsonMap>[],
                       });
                       if (!mounted) return;
@@ -222,17 +236,24 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                       child: FilledButton.icon(
                         onPressed: () async {
                           try {
-                            final quantite =
-                                int.tryParse(quantiteController.text.trim()) ??
-                                0;
-                            if (articleId == null || quantite <= 0) {
+                            final quantiteError = Validators.minIntRequired(
+                              quantiteController.text,
+                              'Quantite',
+                              1,
+                            );
+                            if (articleId == null || quantiteError != null) {
                               showAppMessage(
                                 context,
-                                'Selectionnez un article et une quantite valide',
+                                quantiteError ??
+                                    'Selectionnez un article et une quantite valide',
                                 error: true,
                               );
                               return;
                             }
+
+                            final quantite = int.parse(
+                              Validators.normalize(quantiteController.text),
+                            );
 
                             await CommandesClientsService.ajouterLigne(
                               commandeId,

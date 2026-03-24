@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/types.dart';
 import '../../../shared/services/fournisseurs_service.dart';
 import 'crud_helpers.dart';
@@ -20,7 +21,12 @@ class _FournisseursPageState extends State<FournisseursPage> {
     _future = FournisseursService.findAll();
   }
 
-  void _refresh() => setState(() => _future = FournisseursService.findAll());
+  void _refresh() {
+    if (!mounted) return;
+    setState(() {
+      _future = FournisseursService.findAll();
+    });
+  }
 
   Future<void> _openForm({JsonMap? fournisseur}) async {
     final fields = {
@@ -80,17 +86,56 @@ class _FournisseursPageState extends State<FournisseursPage> {
                   child: FilledButton(
                     onPressed: () async {
                       try {
-                        if (fields['nom']!.text.trim().isEmpty) {
-                          showAppMessage(
-                            context,
-                            'Le nom est requis',
-                            error: true,
-                          );
+                        final validations = [
+                          Validators.strictText(
+                            fields['nom']!.text,
+                            'Nom',
+                            required: true,
+                          ),
+                          Validators.address(fields['adresse']!.text),
+                          Validators.strictText(
+                            fields['ville']!.text,
+                            'Ville',
+                            maxLength: Validators.maxCityLength,
+                          ),
+                          Validators.postalCodeInternational(
+                            fields['codePostal']!.text,
+                          ),
+                          Validators.phoneInternational(
+                            fields['telephone']!.text,
+                          ),
+                          Validators.email(fields['email']!.text),
+                          Validators.strictText(
+                            fields['contactNom']!.text,
+                            'Contact',
+                          ),
+                        ];
+
+                        final firstError = validations.firstWhere(
+                          (v) => v != null,
+                          orElse: () => null,
+                        );
+                        if (firstError != null) {
+                          showAppMessage(context, firstError, error: true);
                           return;
                         }
+
                         final payload = {
-                          for (final e in fields.entries)
-                            e.key: e.value.text.trim(),
+                          'nom': Validators.normalize(fields['nom']!.text),
+                          'adresse': Validators.normalize(
+                            fields['adresse']!.text,
+                          ),
+                          'ville': Validators.normalize(fields['ville']!.text),
+                          'codePostal': Validators.normalize(
+                            fields['codePostal']!.text,
+                          ),
+                          'telephone': Validators.normalize(
+                            fields['telephone']!.text,
+                          ),
+                          'email': Validators.normalize(fields['email']!.text),
+                          'contactNom': Validators.normalize(
+                            fields['contactNom']!.text,
+                          ),
                         };
                         if (fournisseur == null) {
                           await FournisseursService.create(payload);
@@ -169,6 +214,7 @@ class _FournisseursPageState extends State<FournisseursPage> {
                               await FournisseursService.delete(
                                 item['id'] as int,
                               );
+                              if (!mounted) return;
                               _refresh();
                             } catch (e) {
                               if (!mounted) return;

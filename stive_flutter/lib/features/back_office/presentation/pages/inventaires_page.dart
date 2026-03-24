@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/types.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../shared/services/articles_service.dart';
 import '../../../shared/services/inventaires_service.dart';
 import 'crud_helpers.dart';
@@ -22,7 +23,9 @@ class _InventairesPageState extends State<InventairesPage> {
     _future = InventairesService.findAll();
   }
 
-  void _refresh() => setState(() => _future = InventairesService.findAll());
+  void _refresh() => setState(() {
+        _future = InventairesService.findAll();
+      });
 
   Future<void> _createInventaire() async {
     final articles = await ArticlesService.findAll();
@@ -84,9 +87,29 @@ class _InventairesPageState extends State<InventairesPage> {
                   child: FilledButton(
                     onPressed: () async {
                       try {
+                        final commentError = Validators.commentaire(
+                          commentaireController.text,
+                        );
+                        if (commentError != null) {
+                          showAppMessage(context, commentError, error: true);
+                          return;
+                        }
+
                         final lignes = <JsonMap>[];
                         for (final entry in quantities.entries) {
-                          final qty = int.tryParse(entry.value.text.trim());
+                          final value = Validators.normalize(entry.value.text);
+                          if (value.isEmpty) {
+                            continue;
+                          }
+                          final qtyError = Validators.nonNegativeIntOptional(
+                            value,
+                            'Quantite constatee',
+                          );
+                          if (qtyError != null) {
+                            showAppMessage(context, qtyError, error: true);
+                            return;
+                          }
+                          final qty = int.tryParse(value);
                           if (qty != null) {
                             lignes.add({
                               'articleId': entry.key,
@@ -95,7 +118,9 @@ class _InventairesPageState extends State<InventairesPage> {
                           }
                         }
                         await InventairesService.create(
-                          commentaire: commentaireController.text.trim(),
+                          commentaire: Validators.normalize(
+                            commentaireController.text,
+                          ),
                           lignes: lignes,
                         );
                         if (!mounted) return;

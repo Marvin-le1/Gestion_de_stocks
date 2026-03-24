@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/types.dart';
 import '../../../shared/services/clients_service.dart';
 import 'crud_helpers.dart';
@@ -20,7 +21,9 @@ class _ClientsPageState extends State<ClientsPage> {
     _future = ClientsService.findAll();
   }
 
-  void _refresh() => setState(() => _future = ClientsService.findAll());
+  void _refresh() => setState(() {
+        _future = ClientsService.findAll();
+      });
 
   Future<void> _openForm({JsonMap? client}) async {
     final fields = {
@@ -72,19 +75,60 @@ class _ClientsPageState extends State<ClientsPage> {
                   child: FilledButton(
                     onPressed: () async {
                       try {
-                        if (fields['nom']!.text.trim().isEmpty ||
-                            fields['prenom']!.text.trim().isEmpty ||
-                            fields['email']!.text.trim().isEmpty) {
-                          showAppMessage(
-                            context,
-                            'Nom, prenom et email sont requis',
-                            error: true,
-                          );
+                        final validations = [
+                          Validators.strictText(
+                            fields['nom']!.text,
+                            'Nom',
+                            required: true,
+                          ),
+                          Validators.strictText(
+                            fields['prenom']!.text,
+                            'Prenom',
+                            required: true,
+                          ),
+                          Validators.email(
+                            fields['email']!.text,
+                            required: true,
+                          ),
+                          Validators.phoneInternational(
+                            fields['telephone']!.text,
+                          ),
+                          Validators.address(fields['adresse']!.text),
+                          Validators.strictText(
+                            fields['ville']!.text,
+                            'Ville',
+                            maxLength: Validators.maxCityLength,
+                          ),
+                          Validators.postalCodeInternational(
+                            fields['codePostal']!.text,
+                          ),
+                        ];
+
+                        final firstError = validations.firstWhere(
+                          (v) => v != null,
+                          orElse: () => null,
+                        );
+                        if (firstError != null) {
+                          showAppMessage(context, firstError, error: true);
                           return;
                         }
+
                         final payload = {
-                          for (final e in fields.entries)
-                            e.key: e.value.text.trim(),
+                          'nom': Validators.normalize(fields['nom']!.text),
+                          'prenom': Validators.normalize(
+                            fields['prenom']!.text,
+                          ),
+                          'email': Validators.normalize(fields['email']!.text),
+                          'telephone': Validators.normalize(
+                            fields['telephone']!.text,
+                          ),
+                          'adresse': Validators.normalize(
+                            fields['adresse']!.text,
+                          ),
+                          'ville': Validators.normalize(fields['ville']!.text),
+                          'codePostal': Validators.normalize(
+                            fields['codePostal']!.text,
+                          ),
                         };
                         if (client == null) {
                           await ClientsService.create(payload);

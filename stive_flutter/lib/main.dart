@@ -9,8 +9,10 @@ Future<void> main() async {
 
   try {
     await AppEnv.load();
-  } catch (_) {
-    await dotenv.load(fileName: '.env.example');
+  } catch (e, st) {
+    debugPrint('AppEnv.load() failed: $e');
+    debugPrint('$st');
+    await dotenv.load(fileName: '.env');
   }
 
   runApp(const NegosudApp());

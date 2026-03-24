@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/types.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../shared/models/cart_item.dart';
 import '../../../shared/services/clients_service.dart';
 import '../../../shared/services/commandes_clients_service.dart';
@@ -77,12 +78,30 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
     if (confirmed != true) return;
 
     try {
+      final commentError = Validators.commentaire(_commentaireController.text);
+      if (commentError != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(commentError)));
+        return;
+      }
+
+      final invalidLine = widget.cart.any((item) => item.quantite <= 0);
+      if (invalidLine) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Le panier contient une quantite invalide')),
+        );
+        return;
+      }
+
       setState(() => _sending = true);
       await CommandesClientsService.create({
         'clientId': _selectedClientId,
-        'commentaire': _commentaireController.text.trim().isEmpty
+        'commentaire': Validators.normalize(_commentaireController.text).isEmpty
             ? 'Commande via application mobile'
-            : _commentaireController.text.trim(),
+            : Validators.normalize(_commentaireController.text),
         'lignes': [
           for (final item in widget.cart)
             {'articleId': item.articleId, 'quantite': item.quantite},

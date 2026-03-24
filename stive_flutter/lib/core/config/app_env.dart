@@ -8,10 +8,19 @@ class AppEnv {
   }
 
   static String get apiBaseUrl {
-    final value = dotenv.env['URL_NGROK']?.trim() ?? '';
-    if (value.isEmpty) {
-      return 'http://10.0.2.2:8080';
+    final rawValue = dotenv.env['URL_NGROK']?.trim() ?? '';
+    final fallback = 'http://10.0.2.2:8080';
+    final base = rawValue.isEmpty ? fallback : rawValue;
+
+    var sanitized = base;
+    if (sanitized.endsWith('/')) {
+      sanitized = sanitized.substring(0, sanitized.length - 1);
     }
-    return value;
+
+    if (sanitized.toLowerCase().endsWith('/api')) {
+      sanitized = sanitized.substring(0, sanitized.length - 4);
+    }
+
+    return sanitized;
   }
 }

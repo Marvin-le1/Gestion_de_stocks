@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/utils/types.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../shared/services/familles_service.dart';
 import 'crud_helpers.dart';
 
@@ -22,7 +23,9 @@ class _FamillesPageState extends State<FamillesPage> {
   }
 
   void _refresh() {
-    setState(() => _future = FamillesService.findAll());
+    setState(() {
+      _future = FamillesService.findAll();
+    });
   }
 
   Future<void> _openForm({JsonMap? famille}) async {
@@ -71,16 +74,30 @@ class _FamillesPageState extends State<FamillesPage> {
                 child: FilledButton(
                   onPressed: () async {
                     try {
+                      final error = Validators.optionalText(
+                        descriptionController.text,
+                        'Description',
+                        255,
+                      );
+                      if (error != null) {
+                        showAppMessage(context, error, error: true);
+                        return;
+                      }
+
                       if (famille == null) {
                         await FamillesService.create(
                           type: type,
-                          description: descriptionController.text.trim(),
+                          description: Validators.normalize(
+                            descriptionController.text,
+                          ),
                         );
                       } else {
                         await FamillesService.update(
                           famille['id'] as int,
                           type: type,
-                          description: descriptionController.text.trim(),
+                          description: Validators.normalize(
+                            descriptionController.text,
+                          ),
                         );
                       }
                       if (!mounted) return;
