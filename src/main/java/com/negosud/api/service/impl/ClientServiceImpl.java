@@ -50,6 +50,16 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public ClientResponseDto findOrCreate(ClientRequestDto dto) {
+        return clientRepository.findByEmail(dto.getEmail())
+                .map(clientMapper::toResponseDto)
+                .orElseGet(() -> {
+                    Client client = clientMapper.toEntity(dto);
+                    return clientMapper.toResponseDto(clientRepository.save(client));
+                });
+    }
+
+    @Override
     public ClientResponseDto create(ClientRequestDto dto) {
         if (clientRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Un client avec l'email " + dto.getEmail() + " existe déjà");

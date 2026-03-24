@@ -14,6 +14,8 @@ public interface ClientService {
 
     List<CommandeClientResponseDto> findCommandesByClient(Long id);
 
+    ClientResponseDto findOrCreate(ClientRequestDto dto);
+
     ClientResponseDto create(ClientRequestDto dto);
 
     ClientResponseDto update(Long id, ClientRequestDto dto);

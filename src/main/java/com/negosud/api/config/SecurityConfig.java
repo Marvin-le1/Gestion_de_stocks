@@ -4,6 +4,7 @@ import com.negosud.api.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -38,9 +39,13 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Endpoints publics
+                // Auth
                 .requestMatchers("/api/auth/**").permitAll()
+                // Swagger
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                // Boutique front-office — lecture catalogue et passage de commande publics
+                .requestMatchers(HttpMethod.GET, "/api/articles/**", "/api/familles/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/clients", "/api/clients/find-or-create", "/api/commandes-clients").permitAll()
                 // Tout le reste nécessite une authentification
                 .anyRequest().authenticated()
             )

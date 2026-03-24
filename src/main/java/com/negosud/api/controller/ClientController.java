@@ -46,6 +46,12 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.CREATED).body(clientService.create(dto));
     }
 
+    @PostMapping("/find-or-create")
+    @Operation(summary = "Trouver un client par email ou le créer s'il n'existe pas (boutique)")
+    public ResponseEntity<ClientResponseDto> findOrCreate(@Valid @RequestBody ClientRequestDto dto) {
+        return ResponseEntity.ok(clientService.findOrCreate(dto));
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un client")
     public ResponseEntity<ClientResponseDto> update(@PathVariable Long id,

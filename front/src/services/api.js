@@ -14,11 +14,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Si le token est expiré ou invalide → redirige vers /login
+// Si le token est expiré ou invalide → redirige vers /login (back-office seulement)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isBoutique = window.location.pathname.startsWith('/boutique');
+    if (error.response?.status === 401 && !isBoutique) {
       localStorage.removeItem('negosud_token');
       localStorage.removeItem('negosud_user');
       window.location.href = '/login';
