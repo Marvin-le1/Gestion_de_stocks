@@ -68,30 +68,57 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
   void _clearCart() => setState(_cart.clear);
 
   Future<void> _openManagerLogin() async {
-    final callback = widget.onOpenManagerLogin;
-    if (callback != null) {
-      await callback();
-    }
+    await widget.onOpenManagerLogin?.call();
   }
+
+  // ── visiteur non connecté ─────────────────────────────────────────────
+
+  Widget _buildGuestScaffold() {
+    final pages = [
+      ClientCataloguePage(cart: _cart, onAddToCart: _addToCart),
+      // clientId null → mode invité
+      ClientPanierPage(
+        cart: _cart,
+        onCartChanged: () => setState(() {}),
+        onClear: _clearCart,
+      ),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Boutique'),
+        actions: [
+          FilledButton.tonalIcon(
+            onPressed: _openManagerLogin,
+            icon: const Icon(Icons.admin_panel_settings_outlined),
+            label: const Text('Espace gérant'),
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+      body: pages[_index],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (value) => setState(() => _index = value),
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.wine_bar_outlined),
+            label: 'Catalogue',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            label: _cart.isEmpty ? 'Panier' : 'Panier (${_cart.length})',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── client connecté ───────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    if (!_isClient) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Boutique'),
-          actions: [
-            FilledButton.tonalIcon(
-              onPressed: _openManagerLogin,
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-              label: const Text('Espace gerant'),
-            ),
-            const SizedBox(width: 12),
-          ],
-        ),
-        body: ClientCataloguePage(onAddToCart: _addToCart),
-      );
-    }
+    if (!_isClient) return _buildGuestScaffold();
 
     return FutureBuilder<JsonMap>(
       future: _clientFuture,
@@ -106,7 +133,7 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
             appBar: AppBar(title: const Text('Boutique')),
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -114,10 +141,10 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
                       snapshot.error.toString(),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: () async => await widget.onLogout?.call(),
-                      child: const Text('Se deconnecter'),
+                      onPressed: () async => widget.onLogout?.call(),
+                      child: const Text('Se déconnecter'),
                     ),
                   ],
                 ),
@@ -128,8 +155,9 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
 
         final client = snapshot.data!;
         final clientId = client['id'] as int;
+
         final pages = [
-          ClientCataloguePage(onAddToCart: _addToCart),
+          ClientCataloguePage(cart: _cart, onAddToCart: _addToCart),
           ClientPanierPage(
             clientId: clientId,
             cart: _cart,
@@ -152,11 +180,9 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
                 onPressed: widget.onOpenProfile,
               ),
               IconButton(
-                tooltip: 'Se deconnecter',
+                tooltip: 'Se déconnecter',
                 icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  await widget.onLogout?.call();
-                },
+                onPressed: () async => widget.onLogout?.call(),
               ),
             ],
           ),

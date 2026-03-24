@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/types.dart';
@@ -6,8 +7,13 @@ import '../../../shared/models/cart_item.dart';
 import '../../../shared/services/articles_service.dart';
 
 class ClientCataloguePage extends StatefulWidget {
-  const ClientCataloguePage({required this.onAddToCart, super.key});
+  const ClientCataloguePage({
+    required this.cart,
+    required this.onAddToCart,
+    super.key,
+  });
 
+  final List<CartItem> cart;
   final void Function(CartItem item) onAddToCart;
 
   @override
@@ -17,6 +23,12 @@ class ClientCataloguePage extends StatefulWidget {
 class _ClientCataloguePageState extends State<ClientCataloguePage> {
   late Future<List<JsonMap>> _future;
   String _search = '';
+
+  int _quantityForArticle(int articleId) {
+    return widget.cart
+        .where((item) => item.articleId == articleId)
+        .fold(0, (sum, item) => sum + item.quantite);
+  }
 
   @override
   void initState() {
@@ -60,6 +72,11 @@ class _ClientCataloguePageState extends State<ClientCataloguePage> {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
+                  final rawId = item['id'];
+                  final articleId = rawId is num ? rawId.toInt() : null;
+                  final quantityInCart = articleId == null
+                      ? 0
+                      : _quantityForArticle(articleId);
                   return Card(
                     margin: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -70,16 +87,41 @@ class _ClientCataloguePageState extends State<ClientCataloguePage> {
                       subtitle: Text(
                         '${item['maison'] ?? ''} • ${Formatters.money(item['prixUnitaire'] as num?)}',
                       ),
-                      trailing: IconButton(
-                        onPressed: () {
-                          widget.onAddToCart(
-                            CartItem(article: item, quantite: 1),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Ajouté au panier')),
-                          );
-                        },
-                        icon: const Icon(Icons.add_shopping_cart_outlined),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (quantityInCart > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '$quantityInCart',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          IconButton(
+                            onPressed: () {
+                              widget.onAddToCart(
+                                CartItem(article: item, quantite: 1),
+                              );
+                              HapticFeedback.selectionClick();
+                            },
+                            icon: const Icon(Icons.add_shopping_cart_outlined),
+                          ),
+                        ],
                       ),
                     ),
                   );
