@@ -45,7 +45,7 @@ Widget buildPaginationFooter({
   required VoidCallback? onPrevious,
   required VoidCallback? onNext,
 }) {
-  if (totalItems == 0) {
+  if (totalItems == 0 || totalPages <= 1) {
     return const SizedBox.shrink();
   }
 
