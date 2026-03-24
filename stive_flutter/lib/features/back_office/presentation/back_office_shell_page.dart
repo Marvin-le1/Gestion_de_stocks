@@ -43,6 +43,15 @@ class _BackOfficeShellPageState extends State<BackOfficeShellPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Back-office • ${_items[_index].label}'),
+        actions: [
+          IconButton(
+            tooltip: 'Changer d\'espace',
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: () {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
         child: SafeArea(
