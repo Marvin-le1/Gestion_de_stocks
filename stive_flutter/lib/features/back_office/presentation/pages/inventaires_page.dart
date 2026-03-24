@@ -16,12 +16,18 @@ class InventairesPage extends StatefulWidget {
 
 class _InventairesPageState extends State<InventairesPage> {
   late Future<List<JsonMap>> _future;
+  late Future<List<JsonMap>> _articlesFuture;
   static const int _pageSize = 20;
   int _page = 0;
 
   int _toInt(dynamic value, {int fallback = 0}) {
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  double _toDouble(dynamic value, {double fallback = 0}) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
   int _stockForArticle(JsonMap article) {
@@ -49,12 +55,99 @@ class _InventairesPageState extends State<InventairesPage> {
   void initState() {
     super.initState();
     _future = InventairesService.findAll();
+    _articlesFuture = ArticlesService.findAll();
   }
 
   void _refresh() => setState(() {
         _future = InventairesService.findAll();
+      _articlesFuture = ArticlesService.findAll();
       _page = 0;
       });
+
+  Widget _buildOverviewSection({
+    required List<JsonMap> articles,
+    required List<JsonMap> inventaires,
+  }) {
+    final sortedArticles = [...articles]
+      ..sort((a, b) => _articleLabel(a).compareTo(_articleLabel(b)));
+
+    final totalArticles = sortedArticles.length;
+    final totalStock = sortedArticles.fold<int>(
+      0,
+      (sum, article) => sum + _stockForArticle(article),
+    );
+    final estimatedStockValue = sortedArticles.fold<double>(
+      0,
+      (sum, article) =>
+          sum + (_stockForArticle(article) * _toDouble(article['prixUnitaire'])),
+    );
+    final lowStockCount = sortedArticles.where((article) {
+      final seuil = _toInt(article['seuilMinimum'], fallback: 0);
+      return _stockForArticle(article) <= seuil;
+    }).length;
+    final inventairesNonRegularises = inventaires
+        .where((i) => i['regularise'] != true)
+        .length;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Vue d\'ensemble du stock',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(label: Text('Articles: $totalArticles')),
+                Chip(label: Text('Stock total: $totalStock')),
+                Chip(
+                  label: Text(
+                    'Valeur estimee: ${Formatters.money(estimatedStockValue)}',
+                  ),
+                ),
+                Chip(label: Text('Sous seuil: $lowStockCount')),
+                Chip(label: Text('Inventaires a regulariser: $inventairesNonRegularises')),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text('Detail de tout le stock'),
+              subtitle: const Text('Quantite actuelle de chaque article'),
+              children: [
+                if (sortedArticles.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(0, 0, 0, 8),
+                    child: Text('Aucun article en stock'),
+                  )
+                else
+                  for (final article in sortedArticles)
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(_articleLabel(article)),
+                      subtitle: Text(
+                        'Reference: ${(article['reference'] as String?) ?? '-'} • Seuil: ${_toInt(article['seuilMinimum'])}',
+                      ),
+                      trailing: Text(
+                        '${_stockForArticle(article)}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _createInventaire() async {
     final articles = await ArticlesService.findAll();
@@ -297,77 +390,94 @@ class _InventairesPageState extends State<InventairesPage> {
           return Center(child: Text(snapshot.error.toString()));
         }
 
-        final items = [...(snapshot.data ?? <JsonMap>[])];
-        items.sort((a, b) {
-          final aId = (a['id'] as num?)?.toInt() ?? 0;
-          final bId = (b['id'] as num?)?.toInt() ?? 0;
-          return bId.compareTo(aId);
-        });
-        final totalPages =
-            items.isEmpty ? 1 : ((items.length - 1) ~/ _pageSize) + 1;
-        final effectivePage = _page.clamp(0, totalPages - 1);
-        final pagedItems = items
-            .skip(effectivePage * _pageSize)
-            .take(_pageSize)
-            .toList();
-        final startItem = items.isEmpty ? 0 : (effectivePage * _pageSize) + 1;
-        final endItem = (effectivePage * _pageSize) + pagedItems.length;
+        return FutureBuilder<List<JsonMap>>(
+          future: _articlesFuture,
+          builder: (context, articlesSnapshot) {
+            if (articlesSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (articlesSnapshot.hasError) {
+              return Center(child: Text(articlesSnapshot.error.toString()));
+            }
 
-        return Column(
-          children: [
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async => _refresh(),
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton.icon(
-                        onPressed: _createInventaire,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Nouvel inventaire'),
-                      ),
-                    ),
-                    for (final item in pagedItems)
-                      Card(
-                        child: ExpansionTile(
-                          title: Text('Inventaire #${item['id']}'),
-                          subtitle: Text(
-                            'Date: ${Formatters.dateTime(item['dateInventaire'] as String?)}\nRegularise: ${item['regularise'] == true ? 'Oui' : 'Non'}',
-                          ),
-                          trailing: FilledButton.tonal(
-                            onPressed: item['regularise'] == true
-                                ? null
-                                : () => _regulariserInventaire(
-                                      item['id'] as int,
-                                    ),
-                            child: const Text('Regulariser'),
-                          ),
-                          children: [_buildInventaireLignes(item)],
+            final items = [...(snapshot.data ?? <JsonMap>[])];
+            items.sort((a, b) {
+              final aId = (a['id'] as num?)?.toInt() ?? 0;
+              final bId = (b['id'] as num?)?.toInt() ?? 0;
+              return bId.compareTo(aId);
+            });
+            final totalPages =
+                items.isEmpty ? 1 : ((items.length - 1) ~/ _pageSize) + 1;
+            final effectivePage = _page.clamp(0, totalPages - 1);
+            final pagedItems = items
+                .skip(effectivePage * _pageSize)
+                .take(_pageSize)
+                .toList();
+            final startItem =
+                items.isEmpty ? 0 : (effectivePage * _pageSize) + 1;
+            final endItem = (effectivePage * _pageSize) + pagedItems.length;
+
+            return Column(
+              children: [
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async => _refresh(),
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        _buildOverviewSection(
+                          articles: articlesSnapshot.data ?? const <JsonMap>[],
+                          inventaires: items,
                         ),
-                      ),
-                  ],
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: FilledButton.icon(
+                            onPressed: _createInventaire,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Nouvel inventaire'),
+                          ),
+                        ),
+                        for (final item in pagedItems)
+                          Card(
+                            child: ExpansionTile(
+                              title: Text('Inventaire #${item['id']}'),
+                              subtitle: Text(
+                                'Date: ${Formatters.dateTime(item['dateInventaire'] as String?)}\nRegularise: ${item['regularise'] == true ? 'Oui' : 'Non'}',
+                              ),
+                              trailing: FilledButton.tonal(
+                                onPressed: item['regularise'] == true
+                                    ? null
+                                    : () => _regulariserInventaire(
+                                          item['id'] as int,
+                                        ),
+                                child: const Text('Regulariser'),
+                              ),
+                              children: [_buildInventaireLignes(item)],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: buildPaginationFooter(
-                currentPage: effectivePage,
-                totalPages: totalPages,
-                totalItems: items.length,
-                startItem: startItem,
-                endItem: endItem,
-                onPrevious: effectivePage > 0
-                    ? () => setState(() => _page = effectivePage - 1)
-                    : null,
-                onNext: effectivePage < totalPages - 1
-                    ? () => setState(() => _page = effectivePage + 1)
-                    : null,
-              ),
-            ),
-          ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: buildPaginationFooter(
+                    currentPage: effectivePage,
+                    totalPages: totalPages,
+                    totalItems: items.length,
+                    startItem: startItem,
+                    endItem: endItem,
+                    onPrevious: effectivePage > 0
+                        ? () => setState(() => _page = effectivePage - 1)
+                        : null,
+                    onNext: effectivePage < totalPages - 1
+                        ? () => setState(() => _page = effectivePage + 1)
+                        : null,
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
