@@ -1,6 +1,8 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^(?:(?:\+|00)33[\s.-]?|0)[1-9](?:[\s.-]?\d{2}){4}$/;
-const POSTAL_REGEX = /^\d{5}$/;
+// Numéro international : +, chiffres, espaces, tirets, points, parenthèses — entre 6 et 20 caractères
+const PHONE_REGEX = /^\+?[\d\s\-\.\(\)]{6,20}$/;
+// Code postal international : lettres, chiffres, espaces, tirets — entre 2 et 10 caractères (UK, Canada, Italie, etc.)
+const POSTAL_REGEX = /^[A-Z0-9\s\-]{2,10}$/i;
 
 export const rules = {
   required: (label) => (v) =>
@@ -10,12 +12,12 @@ export const rules = {
     v && !EMAIL_REGEX.test(v) ? 'Adresse email invalide' : null,
 
   phone: (v) =>
-    v && !PHONE_REGEX.test(v.replace(/\s/g, ''))
-      ? 'Numéro de téléphone invalide (ex : 06 12 34 56 78)'
+    v && !PHONE_REGEX.test(v)
+      ? 'Numéro invalide (ex : +33 6 12 34 56 78, +39 02 1234567)'
       : null,
 
   postalCode: (v) =>
-    v && !POSTAL_REGEX.test(v) ? 'Code postal invalide (5 chiffres)' : null,
+    v && !POSTAL_REGEX.test(v) ? 'Code postal invalide' : null,
 
   positiveNumber: (label) => (v) =>
     v !== '' && v !== null && Number(v) <= 0 ? `${label} doit être supérieur à 0` : null,

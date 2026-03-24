@@ -10,7 +10,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { clientService } from '../../services/clientService';
 import { validate, rules, hasErrors } from '../../utils/validate';
 
-const EMPTY_FORM = { nom: '', prenom: '', email: '', telephone: '', adresse: '', ville: '', codePostal: '' };
+const EMPTY_FORM = { nom: '', prenom: '', email: '', telephone: '', adresse: '', ville: '', codePostal: '', pays: '' };
 
 const SCHEMA = {
   nom:       [rules.required('Le nom')],
@@ -48,7 +48,7 @@ export default function Clients() {
   const openCreate = () => { setEditId(null); setForm(EMPTY_FORM); setErrors({}); setDialogOpen(true); };
   const openEdit = (row) => {
     setEditId(row.id);
-    setForm({ nom: row.nom, prenom: row.prenom, email: row.email, telephone: row.telephone || '', adresse: row.adresse || '', ville: row.ville || '', codePostal: row.codePostal || '' });
+    setForm({ nom: row.nom, prenom: row.prenom, email: row.email, telephone: row.telephone || '', adresse: row.adresse || '', ville: row.ville || '', codePostal: row.codePostal || '', pays: row.pays || '' });
     setErrors({});
     setDialogOpen(true);
   };
@@ -120,12 +120,13 @@ export default function Clients() {
             <TextField name="prenom" label="Prénom *" value={form.prenom} onChange={handleChange} size="small" fullWidth {...f('prenom')} />
           </Stack>
           <TextField name="email" label="Email *" value={form.email} onChange={handleChange} size="small" fullWidth {...f('email')} />
-          <TextField name="telephone" label="Téléphone" placeholder="06 12 34 56 78" value={form.telephone} onChange={handleChange} size="small" fullWidth {...f('telephone')} />
+          <TextField name="telephone" label="Téléphone" placeholder="+33 6 12 34 56 78 / +39 02 1234567" value={form.telephone} onChange={handleChange} size="small" fullWidth {...f('telephone')} />
           <TextField name="adresse" label="Adresse" value={form.adresse} onChange={handleChange} size="small" fullWidth />
           <Stack direction="row" spacing={2}>
             <TextField name="ville" label="Ville" value={form.ville} onChange={handleChange} size="small" fullWidth />
-            <TextField name="codePostal" label="Code postal" placeholder="75001" value={form.codePostal} onChange={handleChange} size="small" fullWidth {...f('codePostal')} />
+            <TextField name="codePostal" label="Code postal" placeholder="75001 / SW1A 1AA / H3B 1A7" value={form.codePostal} onChange={handleChange} size="small" fullWidth {...f('codePostal')} />
           </Stack>
+          <TextField name="pays" label="Pays" placeholder="France, Italie, Espagne..." value={form.pays} onChange={handleChange} size="small" fullWidth />
         </Stack>
       </FormDialog>
 

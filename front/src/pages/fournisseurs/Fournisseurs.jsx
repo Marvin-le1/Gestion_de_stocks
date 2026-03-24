@@ -10,7 +10,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import { fournisseurService } from '../../services/fournisseurService';
 import { validate, rules, hasErrors } from '../../utils/validate';
 
-const EMPTY_FORM = { nom: '', adresse: '', ville: '', codePostal: '', telephone: '', email: '', contactNom: '' };
+const EMPTY_FORM = { nom: '', adresse: '', ville: '', codePostal: '', pays: '', telephone: '', email: '', contactNom: '' };
 
 const SCHEMA = {
   nom:        [rules.required('Le nom')],
@@ -47,7 +47,7 @@ export default function Fournisseurs() {
   const openCreate = () => { setEditId(null); setForm(EMPTY_FORM); setErrors({}); setDialogOpen(true); };
   const openEdit = (row) => {
     setEditId(row.id);
-    setForm({ nom: row.nom, adresse: row.adresse || '', ville: row.ville || '', codePostal: row.codePostal || '', telephone: row.telephone || '', email: row.email || '', contactNom: row.contactNom || '' });
+    setForm({ nom: row.nom, adresse: row.adresse || '', ville: row.ville || '', codePostal: row.codePostal || '', pays: row.pays || '', telephone: row.telephone || '', email: row.email || '', contactNom: row.contactNom || '' });
     setErrors({});
     setDialogOpen(true);
   };
@@ -119,10 +119,11 @@ export default function Fournisseurs() {
           <TextField name="adresse" label="Adresse" value={form.adresse} onChange={handleChange} size="small" fullWidth />
           <Stack direction="row" spacing={2}>
             <TextField name="ville" label="Ville" value={form.ville} onChange={handleChange} size="small" fullWidth />
-            <TextField name="codePostal" label="Code postal" placeholder="75001" value={form.codePostal} onChange={handleChange} size="small" fullWidth {...f('codePostal')} />
+            <TextField name="codePostal" label="Code postal" placeholder="75001 / SW1A 1AA / H3B 1A7" value={form.codePostal} onChange={handleChange} size="small" fullWidth {...f('codePostal')} />
           </Stack>
+          <TextField name="pays" label="Pays" placeholder="France, Italie, Espagne..." value={form.pays} onChange={handleChange} size="small" fullWidth />
           <Stack direction="row" spacing={2}>
-            <TextField name="telephone" label="Téléphone" placeholder="06 12 34 56 78" value={form.telephone} onChange={handleChange} size="small" fullWidth {...f('telephone')} />
+            <TextField name="telephone" label="Téléphone" placeholder="+33 6 12 34 56 78 / +39 02 1234567" value={form.telephone} onChange={handleChange} size="small" fullWidth {...f('telephone')} />
             <TextField name="email" label="Email" placeholder="contact@domaine.fr" value={form.email} onChange={handleChange} size="small" fullWidth {...f('email')} />
           </Stack>
         </Stack>
