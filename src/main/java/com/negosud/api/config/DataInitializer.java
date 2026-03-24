@@ -37,15 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        // On ne charge les données que si la base est vide
-        if (familleRepository.count() > 0) {
-            log.info("Base de données déjà peuplée — initialisation ignorée.");
-            return;
-        }
-
-        log.info("Initialisation des données de démonstration NEGOSUD...");
-
-        // ── Utilisateur admin par défaut ──────────────────────────────────────
+        // ── Utilisateur admin — toujours vérifié, indépendamment des autres données ──
         if (!utilisateurRepository.existsByEmail("admin@negosud.fr")) {
             Utilisateur admin = new Utilisateur();
             admin.setEmail("admin@negosud.fr");
@@ -55,6 +47,14 @@ public class DataInitializer implements CommandLineRunner {
             utilisateurRepository.save(admin);
             log.info("✔ Compte admin créé — email: admin@negosud.fr / mdp: negosud2024");
         }
+
+        // On ne charge les données de démo que si la base est vide
+        if (familleRepository.count() > 0) {
+            log.info("Base de données déjà peuplée — initialisation ignorée.");
+            return;
+        }
+
+        log.info("Initialisation des données de démonstration NEGOSUD...");
 
         // ── Familles ─────────────────────────────────────────────────────────
         Famille rouge     = famille(TypeFamille.ROUGE,     "Vins rouges de toutes régions");
