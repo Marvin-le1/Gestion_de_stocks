@@ -90,6 +90,27 @@ class _FournisseursPageState extends State<FournisseursPage> {
       }
     }
 
+    String? hintFor(String key) {
+      switch (key) {
+        case 'nom':
+          return 'Ex: Domaines du Sud';
+        case 'adresse':
+          return 'Ex: 8 avenue du Port';
+        case 'ville':
+          return 'Ex: Reims';
+        case 'codePostal':
+          return 'Ex: 51100';
+        case 'telephone':
+          return 'Ex: +33326123456';
+        case 'email':
+          return 'Ex: contact@domainesdusud.fr';
+        case 'contactNom':
+          return 'Ex: Paul Bernard';
+        default:
+          return null;
+      }
+    }
+
     String? validateField(String key, String value) {
       switch (key) {
         case 'nom':
@@ -181,6 +202,7 @@ class _FournisseursPageState extends State<FournisseursPage> {
                                 : TextInputType.text,
                             decoration: InputDecoration(
                               labelText: labelFor(entry.key),
+                              hintText: hintFor(entry.key),
                             ),
                             validator: (value) =>
                                 validateField(entry.key, value ?? ''),

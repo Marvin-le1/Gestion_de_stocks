@@ -196,7 +196,7 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'Commentaire (optionnel)',
-                    hintText: 'Ex: livraison en matinee',
+                    hintText: 'Ex: Livraison en matinee, appeler avant',
                   ),
                   validator: (value) => Validators.commentaire(value ?? ''),
                 ),

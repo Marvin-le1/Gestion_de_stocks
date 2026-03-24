@@ -34,6 +34,9 @@ class AppTheme {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         filled: true,
         fillColor: Colors.white,
+        hintStyle: TextStyle(
+          color: colorScheme.onSurface.withValues(alpha: 0.45),
+        ),
       ),
     );
   }

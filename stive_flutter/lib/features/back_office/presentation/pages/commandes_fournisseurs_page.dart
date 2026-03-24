@@ -77,7 +77,10 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: commentaireController,
-                      decoration: const InputDecoration(labelText: 'Commentaire'),
+                      decoration: const InputDecoration(
+                        labelText: 'Commentaire',
+                        hintText: 'Ex: Livraison avant fin de mois',
+                      ),
                       validator: (value) => Validators.commentaire(value ?? ''),
                     ),
                   ],
@@ -232,6 +235,7 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               labelText: 'Quantite',
+                              hintText: 'Ex: 6',
                             ),
                             validator: (value) => Validators.minIntRequired(
                               value ?? '',

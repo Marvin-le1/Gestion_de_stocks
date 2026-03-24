@@ -170,7 +170,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _nomController,
-                        decoration: const InputDecoration(labelText: 'Nom'),
+                        decoration: const InputDecoration(
+                          labelText: 'Nom',
+                          hintText: 'Ex: Martin',
+                        ),
                         validator: (value) => Validators.requiredText(
                           value ?? '',
                           'Nom',
@@ -180,7 +183,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 10),
                       TextFormField(
                         controller: _prenomController,
-                        decoration: const InputDecoration(labelText: 'Prenom'),
+                        decoration: const InputDecoration(
+                          labelText: 'Prenom',
+                          hintText: 'Ex: Camille',
+                        ),
                         validator: (value) {
                           if (!widget.session.isClient) return null;
                           return Validators.requiredText(
@@ -194,7 +200,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(labelText: 'Email'),
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          hintText: 'Ex: camille.martin@mail.com',
+                        ),
                         validator: (value) =>
                             Validators.email(value ?? '', required: true),
                       ),
@@ -203,6 +212,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         controller: _telephoneController,
                         decoration: const InputDecoration(
                           labelText: 'Telephone',
+                          hintText: 'Ex: +33612345678',
                         ),
                         validator: (value) =>
                             Validators.phoneInternational(value ?? ''),
@@ -210,7 +220,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 10),
                       TextFormField(
                         controller: _adresseController,
-                        decoration: const InputDecoration(labelText: 'Adresse'),
+                        decoration: const InputDecoration(
+                          labelText: 'Adresse',
+                          hintText: 'Ex: 12 rue des Vignes',
+                        ),
                         validator: (value) {
                           final text = Validators.normalize(value ?? '');
                           if (text.isEmpty) return null;
@@ -225,7 +238,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 10),
                       TextFormField(
                         controller: _villeController,
-                        decoration: const InputDecoration(labelText: 'Ville'),
+                        decoration: const InputDecoration(
+                          labelText: 'Ville',
+                          hintText: 'Ex: Bordeaux',
+                        ),
                         validator: (value) {
                           final text = Validators.normalize(value ?? '');
                           if (text.isEmpty) return null;
@@ -242,6 +258,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         controller: _codePostalController,
                         decoration: const InputDecoration(
                           labelText: 'Code postal',
+                          hintText: 'Ex: 33000',
                         ),
                         validator: (value) {
                           final text = Validators.normalize(value ?? '');
@@ -257,7 +274,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 10),
                       TextFormField(
                         controller: _paysController,
-                        decoration: const InputDecoration(labelText: 'Pays'),
+                        decoration: const InputDecoration(
+                          labelText: 'Pays',
+                          hintText: 'Ex: France',
+                        ),
                       ),
                       const SizedBox(height: 16),
                       if (widget.session.isClient && _clientId == null)

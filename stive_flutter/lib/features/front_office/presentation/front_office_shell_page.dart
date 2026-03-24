@@ -69,10 +69,10 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
         }
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Front-office client')),
+            appBar: AppBar(title: const Text('Boutique')),
             body: Center(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -105,7 +105,7 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
         return Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            title: Text('Front-office • ${client['prenom'] ?? ''} ${client['nom'] ?? ''}'),
+            title: Text('Boutique • ${client['prenom'] ?? ''} ${client['nom'] ?? ''}'),
             actions: [
               IconButton(
                 tooltip: 'Mon profil',

@@ -37,6 +37,12 @@ class _ArticlesPageState extends State<ArticlesPage> {
 
     if (!mounted) return;
 
+    String intFieldTextOrEmpty(dynamic value) {
+      final parsed = (value as num?)?.toInt();
+      if (parsed == null || parsed == 0) return '';
+      return '$parsed';
+    }
+
     final fields = {
       'reference': TextEditingController(
         text: article?['reference'] as String? ?? '',
@@ -58,10 +64,10 @@ class _ArticlesPageState extends State<ArticlesPage> {
         text: '${article?['prixCarton'] ?? ''}',
       ),
       'quantiteStock': TextEditingController(
-        text: '${article?['quantiteStock'] ?? 0}',
+        text: intFieldTextOrEmpty(article?['quantiteStock']),
       ),
       'seuilMinimum': TextEditingController(
-        text: '${article?['seuilMinimum'] ?? 0}',
+        text: intFieldTextOrEmpty(article?['seuilMinimum']),
       ),
     };
 
@@ -96,6 +102,31 @@ class _ArticlesPageState extends State<ArticlesPage> {
       }
     }
 
+    String? hintFor(String key) {
+      switch (key) {
+        case 'reference':
+          return 'Ex: VIN-001';
+        case 'designation':
+          return 'Ex: Chateau Margaux 2018';
+        case 'description':
+          return 'Description courte de l\'article';
+        case 'maison':
+          return 'Ex: Maison Dupont';
+        case 'annee':
+          return 'Ex: 2020';
+        case 'prixUnitaire':
+          return 'Ex: 19.90';
+        case 'prixCarton':
+          return 'Ex: 119.40';
+        case 'quantiteStock':
+          return '0';
+        case 'seuilMinimum':
+          return '0';
+        default:
+          return null;
+      }
+    }
+
     String? validateField(String key, String value) {
       switch (key) {
         case 'reference':
@@ -119,6 +150,45 @@ class _ArticlesPageState extends State<ArticlesPage> {
         default:
           return null;
       }
+    }
+
+    bool isNumericField(String key) {
+      return [
+        'annee',
+        'prixUnitaire',
+        'prixCarton',
+        'quantiteStock',
+        'seuilMinimum',
+      ].contains(key);
+    }
+
+    bool isDecimalField(String key) {
+      return ['annee', 'prixUnitaire', 'prixCarton'].contains(key);
+    }
+
+    Widget buildFormField(
+      String key,
+      TextEditingController controller,
+      void Function(void Function()) setModalState,
+    ) {
+      return TextFormField(
+        controller: controller,
+        keyboardType: isNumericField(key)
+            ? TextInputType.numberWithOptions(decimal: isDecimalField(key))
+            : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: labelFor(key),
+          isDense: true,
+          hintText: hintFor(key),
+        ),
+        validator: (value) => validateField(key, value ?? ''),
+        onTap: () {
+          if ((key == 'quantiteStock' || key == 'seuilMinimum') &&
+              controller.text.trim() == '0') {
+            controller.clear();
+          }
+        },
+      );
     }
 
     await showModalBottomSheet<void>(
@@ -148,30 +218,90 @@ class _ArticlesPageState extends State<ArticlesPage> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 8),
-                      for (final entry in fields.entries)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: TextFormField(
-                            controller: entry.value,
-                            keyboardType:
-                                [
-                                  'annee',
-                                  'prixUnitaire',
-                                  'prixCarton',
-                                  'quantiteStock',
-                                  'seuilMinimum',
-                                ].contains(entry.key)
-                                ? const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  )
-                                : TextInputType.text,
-                            decoration: InputDecoration(
-                              labelText: labelFor(entry.key),
-                            ),
-                            validator: (value) =>
-                                validateField(entry.key, value ?? ''),
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: buildFormField(
+                          'reference',
+                          fields['reference']!,
+                          setModalState,
                         ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: buildFormField(
+                          'designation',
+                          fields['designation']!,
+                          setModalState,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: buildFormField(
+                          'description',
+                          fields['description']!,
+                          setModalState,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: buildFormField(
+                          'maison',
+                          fields['maison']!,
+                          setModalState,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: buildFormField(
+                          'annee',
+                          fields['annee']!,
+                          setModalState,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: buildFormField(
+                                'prixUnitaire',
+                                fields['prixUnitaire']!,
+                                setModalState,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: buildFormField(
+                                'prixCarton',
+                                fields['prixCarton']!,
+                                setModalState,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: buildFormField(
+                                'quantiteStock',
+                                fields['quantiteStock']!,
+                                setModalState,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: buildFormField(
+                                'seuilMinimum',
+                                fields['seuilMinimum']!,
+                                setModalState,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       DropdownButtonFormField<int>(
                         value: familleId,
                         decoration: const InputDecoration(
@@ -326,6 +456,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: 'Quantité (+/-)',
+                    hintText: 'Ex: 5',
                   ),
                   validator: (value) =>
                       Validators.nonNegativeIntOptional(value ?? '', 'Quantite'),

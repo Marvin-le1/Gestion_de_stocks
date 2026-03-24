@@ -119,6 +119,7 @@ class _AuthPageState extends State<AuthPage> {
                               textInputAction: TextInputAction.next,
                               decoration: const InputDecoration(
                                 labelText: 'Nom',
+                                hintText: 'Ex: Martin',
                                 prefixIcon: Icon(Icons.person_outline),
                               ),
                               validator: (value) => Validators.requiredText(
@@ -135,6 +136,7 @@ class _AuthPageState extends State<AuthPage> {
                             textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
                               labelText: 'Email',
+                              hintText: 'Ex: utilisateur@mail.com',
                               prefixIcon: Icon(Icons.alternate_email),
                             ),
                             validator: (value) =>
@@ -147,6 +149,7 @@ class _AuthPageState extends State<AuthPage> {
                             textInputAction: TextInputAction.done,
                             decoration: const InputDecoration(
                               labelText: 'Mot de passe',
+                              hintText: 'Entrez votre mot de passe',
                               prefixIcon: Icon(Icons.lock_outline),
                             ),
                             validator: (value) {

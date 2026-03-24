@@ -49,7 +49,7 @@ class _ClientCataloguePageState extends State<ClientCataloguePage> {
               padding: const EdgeInsets.all(12),
               child: TextField(
                 decoration: const InputDecoration(
-                  hintText: 'Rechercher un produit',
+                  hintText: 'Ex: Bordeaux, VIN-001, maison',
                   prefixIcon: Icon(Icons.search),
                 ),
                 onChanged: (value) => setState(() => _search = value),

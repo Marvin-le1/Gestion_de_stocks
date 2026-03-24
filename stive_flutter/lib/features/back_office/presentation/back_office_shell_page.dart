@@ -49,7 +49,7 @@ class _BackOfficeShellPageState extends State<BackOfficeShellPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Back-office • ${_items[_index].label}'),
+        title: Text('Negosud • ${_items[_index].label}'),
         actions: [
           IconButton(
             tooltip: 'Mon profil',
