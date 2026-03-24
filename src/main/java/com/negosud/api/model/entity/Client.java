@@ -34,6 +34,9 @@ public class Client {
     private String codePostal;
     private String pays;
 
+    /** Mot de passe optionnel — bcrypt, null si commande en invité */
+    private String motDePasse;
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CommandeClient> commandes = new ArrayList<>();
 }

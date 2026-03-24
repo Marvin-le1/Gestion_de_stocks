@@ -10,4 +10,9 @@ export const clientService = {
   findOrCreate: (data) => api.post(`${BASE}/find-or-create`, data),
   update: (id, data) => api.put(`${BASE}/${id}`, data),
   delete: (id) => api.delete(`${BASE}/${id}`),
+
+  // Boutique — identification
+  hasPassword: (email) => api.get(`${BASE}/has-password`, { params: { email } }),
+  findByEmail: (email) => api.get(`${BASE}/by-email`, { params: { email } }),
+  loginClient: (email, motDePasse) => api.post(`${BASE}/login`, { email, motDePasse }),
 };

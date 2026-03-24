@@ -5,6 +5,7 @@ import com.negosud.api.dto.response.ClientResponseDto;
 import com.negosud.api.dto.response.CommandeClientResponseDto;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ClientService {
 
@@ -13,6 +14,15 @@ public interface ClientService {
     ClientResponseDto findById(Long id);
 
     List<CommandeClientResponseDto> findCommandesByClient(Long id);
+
+    /** Cherche le client par email sans vérification de mot de passe (boutique) */
+    Optional<ClientResponseDto> findByEmail(String email);
+
+    /** Indique si un client possède déjà un mot de passe */
+    boolean hasPassword(String email);
+
+    /** Connexion boutique — vérifie email + mot de passe, retourne le client */
+    ClientResponseDto loginClient(String email, String motDePasse);
 
     ClientResponseDto findOrCreate(ClientRequestDto dto);
 
