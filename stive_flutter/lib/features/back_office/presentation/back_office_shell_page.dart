@@ -59,7 +59,7 @@ class _BackOfficeShellPageState extends State<BackOfficeShellPage> {
             children: [
               const ListTile(
                 title: Text('NEGOSUD'),
-                subtitle: Text('Gestion entrepot'),
+                subtitle: Text('Gestion entrepôt'),
               ),
               const Divider(),
               for (var i = 0; i < _items.length; i++)

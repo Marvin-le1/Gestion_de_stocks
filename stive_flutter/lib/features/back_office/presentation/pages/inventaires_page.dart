@@ -113,14 +113,14 @@ class _InventairesPageState extends State<InventairesPage> {
                   ),
                 ),
                 Chip(label: Text('Sous seuil: $lowStockCount')),
-                Chip(label: Text('Inventaires a regulariser: $inventairesNonRegularises')),
+                Chip(label: Text('Inventaires à régulariser: $inventairesNonRegularises')),
               ],
             ),
             const SizedBox(height: 10),
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
               title: const Text('Detail de tout le stock'),
-              subtitle: const Text('Quantite actuelle de chaque article'),
+              subtitle: const Text('Quantité actuelle de chaque article'),
               children: [
                 if (sortedArticles.isEmpty)
                   const Padding(
@@ -232,12 +232,12 @@ class _InventairesPageState extends State<InventairesPage> {
                                         controller: controller,
                                         keyboardType: TextInputType.number,
                                         decoration: const InputDecoration(
-                                          labelText: 'Quantite constatee',
+                                          labelText: 'Quantité constatée',
                                         ),
                                         validator: (value) =>
                                             Validators.minIntRequired(
                                               value ?? '',
-                                              'Quantite constatee',
+                                              'Quantité constatée',
                                               0,
                                             ),
                                         onChanged: (_) => setModalState(() {}),
@@ -299,7 +299,7 @@ class _InventairesPageState extends State<InventairesPage> {
                               showAppMessage(context, e.toString(), error: true);
                             }
                           },
-                          child: const Text('Creer inventaire'),
+                          child: const Text('Créer inventaire'),
                         ),
                       ),
                     ],
@@ -334,7 +334,7 @@ class _InventairesPageState extends State<InventairesPage> {
                 _articleLabel((ligne['article'] as JsonMap?) ?? const {}),
               ),
               subtitle: Text(
-                'Avant: ${_toInt(ligne['quantiteAvantRegularisation'])} • Constatee: ${_toInt(ligne['quantiteConstatee'])} • Ecart: ${_formatEcart(_toInt(ligne['ecart']))}',
+                'Avant: ${_toInt(ligne['quantiteAvantRegularisation'])} • Constatée: ${_toInt(ligne['quantiteConstatee'])} • Ecart: ${_formatEcart(_toInt(ligne['ecart']))}',
               ),
             ),
         ],
@@ -347,9 +347,9 @@ class _InventairesPageState extends State<InventairesPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Regulariser le stock'),
+          title: const Text('Régulariser le stock'),
           content: const Text(
-            'Cette action va mettre a jour le stock reel avec les quantites constatees. Continuer ?',
+            'Cette action va mettre à jour le stock réel avec les quantités constatées. Continuer ?',
           ),
           actions: [
             TextButton(
@@ -371,7 +371,7 @@ class _InventairesPageState extends State<InventairesPage> {
       await InventairesService.regulariser(inventaireId);
       if (!mounted) return;
       _refresh();
-      showAppMessage(context, 'Stock regularise avec succes');
+      showAppMessage(context, 'Stock régularisé avec succès');
     } catch (e) {
       if (!mounted) return;
       showAppMessage(context, e.toString(), error: true);
@@ -442,7 +442,7 @@ class _InventairesPageState extends State<InventairesPage> {
                             child: ExpansionTile(
                               title: Text('Inventaire #${item['id']}'),
                               subtitle: Text(
-                                'Date: ${Formatters.dateTime(item['dateInventaire'] as String?)}\nRegularise: ${item['regularise'] == true ? 'Oui' : 'Non'}',
+                                'Date: ${Formatters.dateTime(item['dateInventaire'] as String?)}\nRégularisé: ${item['regularise'] == true ? 'Oui' : 'Non'}',
                               ),
                               trailing: FilledButton.tonal(
                                 onPressed: item['regularise'] == true

@@ -92,7 +92,7 @@ class Validators {
     ),
     CountryRule(
       code: 'US',
-      name: 'Etats-Unis',
+      name: 'États-Unis',
       dialCode: '+1',
       postalRegex: RegExp(r'^\d{5}(-\d{4})?$'),
       postalExample: '90210',
@@ -199,7 +199,7 @@ class Validators {
     final normalized = normalize(value);
     if (normalized.isEmpty) return '$label est requis';
     if (maxLength != null && !hasMaxLength(normalized, maxLength)) {
-      return '$label depasse $maxLength caracteres';
+      return '$label dépasse $maxLength caractères';
     }
     return null;
   }
@@ -215,7 +215,7 @@ class Validators {
       return required ? '$label est requis' : null;
     }
     if (!hasMaxLength(normalized, maxLength)) {
-      return '$label depasse $maxLength caracteres';
+      return '$label dépasse $maxLength caractères';
     }
     if (!_strictTextRegex.hasMatch(normalized)) {
       return '$label ne doit contenir que des lettres, espaces, tirets ou apostrophes';
@@ -229,7 +229,7 @@ class Validators {
       return required ? 'Email est requis' : null;
     }
     if (!hasMaxLength(normalized, maxEmailLength)) {
-      return 'Email depasse $maxEmailLength caracteres';
+      return 'Email dépasse $maxEmailLength caractères';
     }
     if (!_emailRegex.hasMatch(normalized)) {
       return 'Email invalide';
@@ -241,14 +241,14 @@ class Validators {
     final normalized = normalize(value);
     if (normalized.isEmpty) return null;
     if (!hasMaxLength(normalized, maxPhoneLength)) {
-      return 'Telephone depasse $maxPhoneLength caracteres';
+      return 'Téléphone dépasse $maxPhoneLength caractères';
     }
     if (!_phoneAllowedCharsRegex.hasMatch(normalized)) {
-      return 'Telephone invalide';
+      return 'Téléphone invalide';
     }
     final digitsCount = normalized.replaceAll(RegExp(r"\D"), '').length;
     if (digitsCount < 8 || digitsCount > 15) {
-      return 'Telephone invalide (8 a 15 chiffres)';
+      return 'Téléphone invalide (8 à 15 chiffres)';
     }
     return null;
   }
@@ -262,7 +262,7 @@ class Validators {
       return 'Telephone doit commencer par ${country.dialCode}';
     }
     if (!RegExp(r'^\+[0-9]+$').hasMatch(normalized)) {
-      return 'Telephone invalide';
+      return 'Téléphone invalide';
     }
 
     final totalDigits = normalized.replaceAll(RegExp(r'\D'), '').length;
@@ -274,9 +274,9 @@ class Validators {
         if (country.code == 'FR') {
           return 'Pour la France: 10 chiffres en national (0X...), ou ${country.dialCode} suivi de 9 chiffres';
         }
-        return 'Telephone invalide pour ${country.name} (${country.minLocalDigits} chiffres apres ${country.dialCode})';
+        return 'Téléphone invalide pour ${country.name} (${country.minLocalDigits} chiffres après ${country.dialCode})';
       }
-      return 'Telephone invalide pour ${country.name} (${country.minLocalDigits} a ${country.maxLocalDigits} chiffres apres ${country.dialCode})';
+      return 'Téléphone invalide pour ${country.name} (${country.minLocalDigits} a ${country.maxLocalDigits} chiffres après ${country.dialCode})';
     }
     return null;
   }
@@ -285,14 +285,14 @@ class Validators {
     final normalized = normalize(value);
     if (normalized.isEmpty) return null;
     if (normalized.length > maxPostalCodeLength) {
-      return 'Code postal depasse $maxPostalCodeLength caracteres';
+      return 'Code postal dépasse $maxPostalCodeLength caractères';
     }
     if (!_postalAllowedCharsRegex.hasMatch(normalized)) {
       return 'Code postal invalide';
     }
     final compact = normalized.replaceAll(RegExp(r"[^A-Za-z0-9]"), '');
     if (compact.length < 3 || compact.length > 10) {
-      return 'Code postal invalide (3 a 10 caracteres alphanumeriques)';
+      return 'Code postal invalide (3 à 10 caractères alphanumériques)';
     }
     return null;
   }
@@ -302,7 +302,7 @@ class Validators {
     final normalized = normalizePostalCode(value);
     if (normalized.isEmpty) return null;
     if (normalized.length > maxPostalCodeLength) {
-      return 'Code postal depasse $maxPostalCodeLength caracteres';
+      return 'Code postal dépasse $maxPostalCodeLength caractères';
     }
     if (!_postalAllowedCharsRegex.hasMatch(normalized)) {
       return 'Code postal invalide';
@@ -319,7 +319,7 @@ class Validators {
       return required ? 'Adresse est requise' : null;
     }
     if (!hasMaxLength(normalized, maxAddressLength)) {
-      return 'Adresse depasse $maxAddressLength caracteres';
+      return 'Adresse dépasse $maxAddressLength caractères';
     }
     return null;
   }
@@ -328,26 +328,26 @@ class Validators {
     final normalized = normalize(value);
     if (normalized.isEmpty) return null;
     if (!hasMaxLength(normalized, maxCommentLength)) {
-      return 'Commentaire depasse $maxCommentLength caracteres';
+      return 'Commentaire dépasse $maxCommentLength caractères';
     }
     return null;
   }
 
   static String? reference(String value) {
     final normalized = normalize(value);
-    if (normalized.isEmpty) return 'Reference est requise';
-    if (!hasMaxLength(normalized, 60)) return 'Reference depasse 60 caracteres';
+    if (normalized.isEmpty) return 'Référence est requise';
+    if (!hasMaxLength(normalized, 60)) return 'Référence dépasse 60 caractères';
     if (!_referenceRegex.hasMatch(normalized)) {
-      return 'Reference invalide';
+      return 'Référence invalide';
     }
     return null;
   }
 
   static String? designation(String value) {
     final normalized = normalize(value);
-    if (normalized.isEmpty) return 'Designation est requise';
+    if (normalized.isEmpty) return 'Désignation est requise';
     if (!hasMaxLength(normalized, 120)) {
-      return 'Designation depasse 120 caracteres';
+      return 'Désignation dépasse 120 caractères';
     }
     return null;
   }
@@ -356,7 +356,7 @@ class Validators {
     final normalized = normalize(value);
     if (normalized.isEmpty) return null;
     if (!hasMaxLength(normalized, maxLength)) {
-      return '$label depasse $maxLength caracteres';
+      return '$label dépasse $maxLength caractères';
     }
     return null;
   }
@@ -406,7 +406,7 @@ class Validators {
     final parsed = int.tryParse(normalized);
     final currentYear = DateTime.now().year + 1;
     if (parsed == null || parsed < 1900 || parsed > currentYear) {
-      return 'Annee invalide';
+      return 'Année invalide';
     }
     return null;
   }

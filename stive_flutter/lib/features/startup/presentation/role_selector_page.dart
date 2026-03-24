@@ -43,7 +43,7 @@ class RoleSelectorPage extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.warehouse_outlined),
-                    label: const Text('Espace gerant (back-office)'),
+                    label: const Text('Espace gérant (back-office)'),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(

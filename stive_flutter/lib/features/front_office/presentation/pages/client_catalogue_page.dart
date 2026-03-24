@@ -76,7 +76,7 @@ class _ClientCataloguePageState extends State<ClientCataloguePage> {
                             CartItem(article: item, quantite: 1),
                           );
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Ajoute au panier')),
+                            const SnackBar(content: Text('Ajouté au panier')),
                           );
                         },
                         icon: const Icon(Icons.add_shopping_cart_outlined),

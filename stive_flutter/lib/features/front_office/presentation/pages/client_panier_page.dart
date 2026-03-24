@@ -89,7 +89,7 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
       if (invalidLine) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Le panier contient une quantite invalide')),
+          const SnackBar(content: Text('Le panier contient une quantité invalide')),
         );
         return;
       }
@@ -110,7 +110,7 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
       widget.onClear();
       _commentaireController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Commande envoyee avec succes')),
+        const SnackBar(content: Text('Commande envoyée avec succès')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -158,7 +158,7 @@ class _ClientPanierPageState extends State<ClientPanierPage> {
                       ),
                   ],
                   validator: (value) =>
-                      value == null ? 'Selectionnez un client' : null,
+                      value == null ? 'Sélectionnez un client' : null,
                   onChanged: (value) => setState(() => _selectedClientId = value),
                 ),
               ),

@@ -45,6 +45,7 @@ class _FrontOfficeShellPageState extends State<FrontOfficeShellPage> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Front-office client'),
         actions: [
           IconButton(

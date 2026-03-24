@@ -24,7 +24,7 @@ class AppAsyncBuilder<T> extends StatelessWidget {
           );
         }
         if (!snapshot.hasData) {
-          return const Center(child: Text('Aucune donnee'));
+          return const Center(child: Text('Aucune donnée'));
         }
         return builder(snapshot.data as T);
       },

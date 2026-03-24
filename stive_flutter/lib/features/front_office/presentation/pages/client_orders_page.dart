@@ -97,7 +97,7 @@ class _ClientOrdersPageState extends State<ClientOrdersPage> {
               DropdownButtonFormField<int>(
                 value: _selectedClientId,
                 decoration: const InputDecoration(
-                  labelText: 'Selectionner votre client',
+                  labelText: 'Sélectionner votre client',
                 ),
                 items: [
                   for (final c in clients)

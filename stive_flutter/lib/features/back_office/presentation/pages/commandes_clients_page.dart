@@ -69,7 +69,7 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                             ),
                         ],
                         validator: (value) =>
-                            value == null ? 'Selectionnez un client' : null,
+                            value == null ? 'Sélectionnez un client' : null,
                         onChanged: (value) =>
                             setModalState(() => clientId = value),
                       ),
@@ -113,7 +113,7 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                       showAppMessage(context, e.toString(), error: true);
                     }
                   },
-                  child: const Text('Creer'),
+                  child: const Text('Créer'),
                 ),
               ],
             );
@@ -223,7 +223,7 @@ class _CommandesClientsPageState extends State<CommandesClientsPage> {
                                 ),
                             ],
                             validator: (value) =>
-                                value == null ? 'Selectionnez un article' : null,
+                                value == null ? 'Sélectionnez un article' : null,
                             onChanged: (value) =>
                                 setModalState(() => articleId = value),
                           ),

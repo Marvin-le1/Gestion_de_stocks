@@ -70,7 +70,7 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                           ),
                       ],
                       validator: (value) =>
-                          value == null ? 'Selectionnez un fournisseur' : null,
+                          value == null ? 'Sélectionnez un fournisseur' : null,
                       onChanged: (value) =>
                           setModalState(() => fournisseurId = value),
                     ),
@@ -110,7 +110,7 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                       showAppMessage(context, e.toString(), error: true);
                     }
                   },
-                  child: const Text('Creer'),
+                  child: const Text('Créer'),
                 ),
               ],
             );
@@ -219,7 +219,7 @@ class _CommandesFournisseursPageState extends State<CommandesFournisseursPage> {
                                 ),
                             ],
                             validator: (value) =>
-                                value == null ? 'Selectionnez un article' : null,
+                                value == null ? 'Sélectionnez un article' : null,
                             onChanged: (value) =>
                                 setModalState(() => articleId = value),
                           ),

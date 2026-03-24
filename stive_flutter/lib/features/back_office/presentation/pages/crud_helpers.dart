@@ -65,7 +65,7 @@ Widget buildPaginationFooter({
               child: OutlinedButton.icon(
                 onPressed: onPrevious,
                 icon: const Icon(Icons.chevron_left),
-                label: const Text('Precedent'),
+                label: const Text('Précédent'),
               ),
             ),
             Padding(

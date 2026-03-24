@@ -88,7 +88,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
         case 'prixCarton':
           return 'Prix carton';
         case 'quantiteStock':
-          return 'Quantite en stock';
+          return 'Quantité en stock';
         case 'seuilMinimum':
           return 'Seuil minimum';
         default:
@@ -113,7 +113,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
         case 'prixCarton':
           return Validators.nonNegativeDecimalOptional(value, 'Prix carton');
         case 'quantiteStock':
-          return Validators.nonNegativeIntOptional(value, 'Quantite stock');
+          return Validators.nonNegativeIntOptional(value, 'Quantité stock');
         case 'seuilMinimum':
           return Validators.nonNegativeIntOptional(value, 'Seuil minimum');
         default:
@@ -325,7 +325,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   controller: controller,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Quantite (+/-)',
+                    labelText: 'Quantité (+/-)',
                   ),
                   validator: (value) =>
                       Validators.nonNegativeIntOptional(value ?? '', 'Quantite'),
