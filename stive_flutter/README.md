@@ -1,9 +1,8 @@
 # NEGOSUD - Front mobile Flutter
 
-Application mobile (sans authentification pour le moment) avec deux espaces:
+Application mobile (sans authentification pour le moment) pour l'espace gerant:
 
 - Back-office gerant: gestion des articles, familles, fournisseurs, clients, commandes clients, commandes fournisseurs, inventaires.
-- Front-office client: catalogue, panier, passage de commande, suivi des commandes.
 
 ## Prerequis
 
@@ -82,12 +81,10 @@ flutter run
 
 ## Couverture cahier des charges
 
-- Separation des espaces gerant/client: OK.
 - CRUD principaux (articles, familles, fournisseurs, clients): OK.
 - Commandes clients: creation, statut, suppression, gestion des lignes: OK.
 - Commandes fournisseurs: creation, statut, suppression, gestion des lignes: OK.
 - Inventaires: creation avec lignes + historique: OK.
-- Front-office client: recherche catalogue, panier, validation commande, suivi + detail des lignes: OK.
 
 ## Verification qualite
 

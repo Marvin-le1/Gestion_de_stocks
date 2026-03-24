@@ -41,7 +41,9 @@ class _BackOfficeShellPageState extends State<BackOfficeShellPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text('Back-office • ${_items[_index].label}')),
+      appBar: AppBar(
+        title: Text('Back-office • ${_items[_index].label}'),
+      ),
       drawer: Drawer(
         child: SafeArea(
           child: ListView(
