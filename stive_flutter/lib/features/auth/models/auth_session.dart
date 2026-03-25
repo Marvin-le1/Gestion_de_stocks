@@ -11,16 +11,15 @@ class AuthSession {
   final String nom;
   final String role;
 
-  bool get isAdmin => role.toUpperCase() == 'ADMIN' || role.toUpperCase() == 'ROLE_ADMIN';
-  bool get isClient => role.toUpperCase() == 'CLIENT' || role.toUpperCase() == 'ROLE_CLIENT';
+  bool get isAdmin =>
+      role.toUpperCase() == 'ADMIN' || role.toUpperCase() == 'ROLE_ADMIN';
+  bool get isEmploye =>
+      role.toUpperCase() == 'EMPLOYE' || role.toUpperCase() == 'ROLE_EMPLOYE';
+  bool get isClient =>
+      role.toUpperCase() == 'CLIENT' || role.toUpperCase() == 'ROLE_CLIENT';
 
   Map<String, String> toStorage() {
-    return {
-      'token': token,
-      'email': email,
-      'nom': nom,
-      'role': role,
-    };
+    return {'token': token, 'email': email, 'nom': nom, 'role': role};
   }
 
   static AuthSession? fromStorage(Map<String, Object?> data) {

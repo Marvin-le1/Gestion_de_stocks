@@ -6,25 +6,24 @@ import '../../services/auth_service.dart';
 import '../../services/auth_session_store.dart';
 
 class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
+  const AuthPage({super.key, this.closeOnSuccess = false});
+
+  final bool closeOnSuccess;
 
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
-  bool _isRegister = false;
   bool _submitting = false;
   bool _autoValidate = false;
 
   final _formKey = GlobalKey<FormState>();
-  final _nomController = TextEditingController();
   final _emailController = TextEditingController();
   final _motDePasseController = TextEditingController();
 
   @override
   void dispose() {
-    _nomController.dispose();
     _emailController.dispose();
     _motDePasseController.dispose();
     super.dispose();
@@ -41,29 +40,21 @@ class _AuthPageState extends State<AuthPage> {
     try {
       setState(() => _submitting = true);
 
-      final session = _isRegister
-          ? await AuthService.register(
-              nom: Validators.normalize(_nomController.text),
-              email: Validators.normalize(_emailController.text),
-              motDePasse: _motDePasseController.text,
-            )
-          : await AuthService.login(
-              email: Validators.normalize(_emailController.text),
-              motDePasse: _motDePasseController.text,
-            );
+      final session = await AuthService.login(
+        email: Validators.normalize(_emailController.text),
+        motDePasse: _motDePasseController.text,
+      );
 
       await AuthSessionStore.instance.save(session);
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isRegister
-                ? 'Compte cree et connexion reussie'
-                : 'Connexion reussie',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Connexion reussie')));
+
+      if (widget.closeOnSuccess && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -108,28 +99,11 @@ class _AuthPageState extends State<AuthPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _isRegister ? 'Creer un compte' : 'Se connecter',
+                            'Se connecter',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 20),
-                          if (_isRegister) ...[
-                            TextFormField(
-                              controller: _nomController,
-                              textInputAction: TextInputAction.next,
-                              decoration: const InputDecoration(
-                                labelText: 'Nom',
-                                hintText: 'Ex: Martin',
-                                prefixIcon: Icon(Icons.person_outline),
-                              ),
-                              validator: (value) => Validators.requiredText(
-                                value ?? '',
-                                'Nom',
-                                maxLength: Validators.maxNameLength,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
@@ -157,9 +131,6 @@ class _AuthPageState extends State<AuthPage> {
                               if (raw.trim().isEmpty) {
                                 return 'Mot de passe requis';
                               }
-                              if (_isRegister && raw.length < 6) {
-                                return 'Minimum 6 caracteres';
-                              }
                               return null;
                             },
                             onFieldSubmitted: (_) => _submit(),
@@ -167,33 +138,9 @@ class _AuthPageState extends State<AuthPage> {
                           const SizedBox(height: 20),
                           FilledButton.icon(
                             onPressed: _submitting ? null : _submit,
-                            icon: Icon(
-                              _isRegister
-                                  ? Icons.app_registration
-                                  : Icons.login,
-                            ),
+                            icon: const Icon(Icons.login),
                             label: Text(
-                              _submitting
-                                  ? 'Traitement...'
-                                  : (_isRegister
-                                        ? 'Creer un compte'
-                                        : 'Connexion'),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _submitting
-                                ? null
-                                : () {
-                                    setState(() {
-                                      _isRegister = !_isRegister;
-                                      _autoValidate = false;
-                                    });
-                                  },
-                            child: Text(
-                              _isRegister
-                                  ? 'Deja un compte ? Se connecter'
-                                  : 'Pas de compte ? Creer un compte',
+                              _submitting ? 'Traitement...' : 'Connexion',
                             ),
                           ),
                         ],

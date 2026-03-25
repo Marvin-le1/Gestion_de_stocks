@@ -24,6 +24,14 @@ class _NegosudAppState extends State<NegosudApp> {
     _initFuture = AuthSessionStore.instance.initialize();
   }
 
+  Future<void> _openManagerLogin(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const AuthPage(closeOnSuccess: true),
+      ),
+    );
+  }
+
   Future<void> _openProfile(BuildContext context, AuthSession session) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -37,7 +45,9 @@ class _NegosudAppState extends State<NegosudApp> {
               email: (email == null || email.trim().isEmpty)
                   ? current.email
                   : email.trim(),
-              nom: (nom == null || nom.trim().isEmpty) ? current.nom : nom.trim(),
+              nom: (nom == null || nom.trim().isEmpty)
+                  ? current.nom
+                  : nom.trim(),
               role: current.role,
             );
             await AuthSessionStore.instance.save(updated);
@@ -66,10 +76,12 @@ class _NegosudAppState extends State<NegosudApp> {
             valueListenable: AuthSessionStore.instance,
             builder: (context, session, _) {
               if (session == null) {
-                return const AuthPage();
+                return FrontOfficeShellPage(
+                  onOpenManagerLogin: () => _openManagerLogin(context),
+                );
               }
 
-              if (session.isAdmin) {
+              if (session.isAdmin || session.isEmploye) {
                 return BackOfficeShellPage(
                   onLogout: AuthSessionStore.instance.logout,
                   onOpenProfile: () => _openProfile(context, session),
@@ -78,9 +90,10 @@ class _NegosudAppState extends State<NegosudApp> {
 
               if (session.isClient) {
                 return FrontOfficeShellPage(
-                  userEmail: session.email,
+                  session: session,
                   onLogout: AuthSessionStore.instance.logout,
                   onOpenProfile: () => _openProfile(context, session),
+                  onOpenManagerLogin: () => _openManagerLogin(context),
                 );
               }
 
